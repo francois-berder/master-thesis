@@ -1,0 +1,10 @@
+CMakeCache.txt
+CMakeFiles/
+Makefile
+bin/
+cmake_install.cmake
+src/core/CMakeFiles/
+src/core/Makefile
+src/core/cmake_install.cmake
+data/
+output/
