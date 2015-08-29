@@ -6,5 +6,6 @@ cmake_install.cmake
 src/core/CMakeFiles/
 src/core/Makefile
 src/core/cmake_install.cmake
-data/
 output/
+data/poster
+data/shelves

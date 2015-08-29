@@ -35,6 +35,11 @@ $<TARGET_OBJECTS:core>
 )
 
 add_executable(
+model
+src/model.cpp
+)
+
+add_executable(
 test
 ${source_files_test}
 $<TARGET_OBJECTS:core>
@@ -48,6 +53,11 @@ gsl
 gslcblas
 lbfgs
 pthread
+)
+
+target_link_libraries(
+model
+${OpenCV_LIBS}
 )
 
 target_link_libraries(
