@@ -268,6 +268,11 @@ std::tuple<Matrix3d, Vector3d> Worker::applyModel(Matrix3d &initialRotation, Vec
         x = secondOrderModelFX(angleZ);
         y = secondOrderModelFY(angleZ);
     }
+    else if(algoParams[0] == "mixed")
+    {
+        x = secondOrderModelFX(angleZ);
+        y = linearModelFY(angleZ);
+    }
 
     double l = x*x + y*y;
     if(l > 1.)
@@ -281,7 +286,6 @@ std::tuple<Matrix3d, Vector3d> Worker::applyModel(Matrix3d &initialRotation, Vec
     Matrix3d rotation;
     rotation = AngleAxisd(angleZ, Vector3d::UnitZ());
 
-    LOGL(initialTranslation << " " << translation);
     return std::make_tuple(initialRotation, translation);
 }
 
