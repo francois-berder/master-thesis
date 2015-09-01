@@ -9,3 +9,14 @@ src/core/cmake_install.cmake
 output/
 data/poster
 data/shelves
+report/missfont.log
+report/report.aux
+report/report.bbl
+report/report.blg
+report/report.log
+report/report.pdf
+report/report.toc
+model-linear-x.png
+model-linear-y.png
+model-quadratic-x.png
+model-quadratic-y.png
