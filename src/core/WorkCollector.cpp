@@ -40,7 +40,7 @@ void WorkCollector::saveToDisk()
     {
         errorFile << result.first << ' ';
         for(auto& r : result.second)
-            errorFile << r << ' ';
+            errorFile << std::get<0>(r) << ' ';
         errorFile << '\n';
     }
 }

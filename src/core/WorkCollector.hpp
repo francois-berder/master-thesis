@@ -6,8 +6,9 @@
 #include <utility>
 #include <mutex>
 #include <tuple>
+#include <Eigen/Dense>
 
-typedef std::vector<double> Result;
+typedef std::vector<std::tuple<double, Eigen::Matrix3d, Eigen::Vector3d>> Result;
 
 class WorkCollector
 {

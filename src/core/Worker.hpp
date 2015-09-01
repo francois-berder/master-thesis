@@ -27,11 +27,11 @@ class Worker
     private :
 
         void run(WorkProvider &provider, WorkCollector &collector);
-        std::vector<double> doWork(const int workID, cv::Mat &leftFrame, cv::Mat &rightFrame);
-        std::vector<std::tuple<Eigen::Matrix3d, Eigen::Vector3d, double>> computeFundamentalMatrix(cv::Mat &leftFrame, cv::Mat &rightFrame);
+        std::vector<std::tuple<double, Eigen::Matrix3d, Eigen::Vector3d>> doWork(const int workID, cv::Mat &leftFrame, cv::Mat &rightFrame);
+        std::vector<std::tuple<double, Eigen::Matrix3d, Eigen::Vector3d>> computeFundamentalMatrix(cv::Mat &leftFrame, cv::Mat &rightFrame);
 
         std::tuple<Eigen::Matrix3d, Eigen::Vector3d> applyRANSACfromOpenGV(cv::Mat &leftFrame, cv::Mat &rightFrame, std::vector<std::string> &algoParams);
-        std::tuple<Eigen::Matrix3d, Eigen::Vector3d> applyModel(Eigen::Matrix3d &rotation, Eigen::Vector3d &translation);
+        std::tuple<Eigen::Matrix3d, Eigen::Vector3d> applyModel(Eigen::Matrix3d &rotation, Eigen::Vector3d &translation, std::vector<std::string> &algoParams);
         std::tuple<Eigen::Matrix3d, Eigen::Vector3d> applyNonLinearMinimization(Eigen::Matrix3d &initialRotation, Eigen::Vector3d &initialTranslation, cv::Mat &leftFrame, cv::Mat &rightFrame, std::vector<std::string> &algoParams);
 
         std::tuple<cv::Mat, cv::Mat, Eigen::Matrix3d, Eigen::Matrix3d> alignFrames(const int workID, Eigen::Matrix3d &rotation, Eigen::Vector3d &translation, cv::Mat &leftFrame, cv::Mat &rightFrame);
@@ -39,8 +39,10 @@ class Worker
         cv::Mat computeDepthMap(const int workID, Eigen::Matrix3d &rotation, cv::Mat &disparityMap);
         void computePointCloud(const int workID, cv::Mat &leftFrame, Eigen::Matrix3d &Hl, cv::Mat &depthMap);
 
-        double modelFX(double x);
-        double modelFY(double y);
+        double linearModelFX(double x);
+        double linearModelFY(double y);
+        double secondOrderModelFX(double x);
+        double secondOrderModelFY(double y);
         double modelFS(double s);
 
         const unsigned int m_ID;

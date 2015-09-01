@@ -122,7 +122,7 @@ void Worker::run(WorkProvider &provider, WorkCollector &collector)
     while(m_isRunning && workID != -1)
     {
         LOG("worker " << m_ID << " doing work " << workID << "\n");
-        std::vector<double> result = doWork(workID, leftFrame, rightFrame);
+        std::vector<std::tuple<double, Matrix3d, Vector3d>> result = doWork(workID, leftFrame, rightFrame);
         collector.saveResult(workID, result);
         if(m_isRunning)
             workID = provider.getWork(leftFrame, rightFrame);
@@ -131,18 +131,14 @@ void Worker::run(WorkProvider &provider, WorkCollector &collector)
     m_isRunning = false;
 }
 
-std::vector<double> Worker::doWork(const int workID, cv::Mat &leftFrame, cv::Mat &rightFrame)
+std::vector<std::tuple<double, Matrix3d, Vector3d>> Worker::doWork(const int workID, cv::Mat &leftFrame, cv::Mat &rightFrame)
 {
-    std::vector<std::tuple<Matrix3d, Vector3d, double>> transformations = computeFundamentalMatrix(leftFrame, rightFrame);
+    std::vector<std::tuple<double, Matrix3d, Vector3d>> transformations = computeFundamentalMatrix(leftFrame, rightFrame);
 
-    std::vector<double> results;
-    for(auto& t : transformations)
-        results.push_back(std::get<2>(t));
+    std::tuple<double, Matrix3d, Vector3d> bestTransformation = *std::min_element(transformations.begin(), transformations.end(), [](std::tuple<double, Matrix3d, Vector3d> &a, std::tuple<double, Matrix3d, Vector3d> &b) { return std::get<0>(a) < std::get<0>(b); });
 
-    std::tuple<Matrix3d, Vector3d, double> bestTransformation = *std::min_element(transformations.begin(), transformations.end(), [](std::tuple<Matrix3d, Vector3d, double> &a, std::tuple<Matrix3d, Vector3d, double> &b) { return std::get<2>(a) < std::get<2>(b); });
-
-    Matrix3d rotation = std::get<0>(bestTransformation);
-    Vector3d translation = std::get<1>(bestTransformation);
+    Matrix3d rotation = std::get<1>(bestTransformation);
+    Vector3d translation = std::get<2>(bestTransformation);
     Mat leftAligned, rightAligned;
     Matrix3d Hl;
     std::tie(leftAligned, rightAligned, Hl, std::ignore) = alignFrames(workID, rotation, translation, leftFrame, rightFrame);
@@ -151,14 +147,14 @@ std::vector<double> Worker::doWork(const int workID, cv::Mat &leftFrame, cv::Mat
     Mat depthMap = computeDepthMap(workID, rotation, disparityMap);
     computePointCloud(workID, leftFrame, Hl, depthMap);
 
-    return results;
+    return transformations;
 }
 
-std::vector<std::tuple<Matrix3d, Vector3d, double>> Worker::computeFundamentalMatrix(cv::Mat &leftFrame, cv::Mat &rightFrame)
+std::vector<std::tuple<double, Matrix3d, Vector3d>> Worker::computeFundamentalMatrix(cv::Mat &leftFrame, cv::Mat &rightFrame)
 {
     std::vector<std::pair<Vector2d, Vector2d>> points = findPoints(leftFrame, rightFrame, 2000, 40.f);
 
-    std::vector<std::tuple<Matrix3d, Vector3d, double>> transformations;
+    std::vector<std::tuple<double, Matrix3d, Vector3d>> transformations;
     for(auto& s : m_algorithms)
     {
         Matrix3d rotation;
@@ -171,28 +167,28 @@ std::vector<std::tuple<Matrix3d, Vector3d, double>> Worker::computeFundamentalMa
         }
         else if(s.find("model") == 0)
         {
-            std::string tmp = s.substr(std::string("model").size(), s.size());
-            unsigned int reverseIndex = convertStringTo<unsigned int>(tmp);
+            std::vector<std::string> algoParams = split(s.substr(std::string("model").size(), s.size()), '-');
+            unsigned int reverseIndex = convertStringTo<unsigned int>(algoParams[0]);
 
-            Matrix3d initialRotation = std::get<0>(transformations[transformations.size() - 1 - reverseIndex]);
-            Vector3d initialTranslation =  std::get<1>(transformations[transformations.size() - 1 - reverseIndex]);
-
-            std::tie(rotation, translation) = applyModel(initialRotation, initialTranslation);
+            Matrix3d initialRotation = std::get<1>(transformations[transformations.size() - 1 - reverseIndex]);
+            Vector3d initialTranslation =  std::get<2>(transformations[transformations.size() - 1 - reverseIndex]);
+            algoParams.erase(algoParams.begin());
+            std::tie(rotation, translation) = applyModel(initialRotation, initialTranslation, algoParams);
         }
         else if(s.find("opengv-minimization") == 0)
         {
             std::vector<std::string> algoParams = split(s.substr(std::string("opengv-minimization").size(), s.size()), '-');
             unsigned int reverseIndex = convertStringTo<unsigned int>(algoParams[0]);
 
-            Matrix3d initialRotation = std::get<0>(transformations[transformations.size() - 1 - reverseIndex]);
-            Vector3d initialTranslation =  std::get<1>(transformations[transformations.size() - 1 - reverseIndex]);
+            Matrix3d initialRotation = std::get<1>(transformations[transformations.size() - 1 - reverseIndex]);
+            Vector3d initialTranslation =  std::get<2>(transformations[transformations.size() - 1 - reverseIndex]);
             algoParams.erase(algoParams.begin());
             std::tie(rotation, translation) = applyNonLinearMinimization(initialRotation, initialTranslation, leftFrame, rightFrame, algoParams);
         }
 
         double error = computeReprojectionError(m_leftCameraMatrix, m_rightCameraMatrix, rotation, translation, points);
 
-        transformations.push_back(std::make_tuple(rotation, translation, error));
+        transformations.push_back(std::make_tuple(error, rotation, translation));
     }
 
 
@@ -255,13 +251,24 @@ std::tuple<Matrix3d, Vector3d> Worker::applyRANSACfromOpenGV(cv::Mat &leftFrame,
     return std::make_tuple(rotation, translation);
 }
 
-std::tuple<Matrix3d, Vector3d> Worker::applyModel(Matrix3d &initialRotation, Vector3d &initialTranslation)
+std::tuple<Matrix3d, Vector3d> Worker::applyModel(Matrix3d &initialRotation, Vector3d &initialTranslation, std::vector<std::string> &algoParams)
 {
     double angleX, angleY, angleZ;
     std::tie(angleX, angleY, angleZ) = findCardanAngles(initialRotation);
 
-    double x = modelFX(angleZ);
-    double y = modelFY(angleZ);
+    double x, y;
+
+    if(algoParams[0] == "linear")
+    {
+        x = linearModelFX(angleZ);
+        y = linearModelFY(angleZ);
+    }
+    else if(algoParams[0] == "secondOrder")
+    {
+        x = secondOrderModelFX(angleZ);
+        y = secondOrderModelFY(angleZ);
+    }
+
     double l = x*x + y*y;
     if(l > 1.)
     {
@@ -274,7 +281,8 @@ std::tuple<Matrix3d, Vector3d> Worker::applyModel(Matrix3d &initialRotation, Vec
     Matrix3d rotation;
     rotation = AngleAxisd(angleZ, Vector3d::UnitZ());
 
-    return std::make_tuple(rotation, translation);
+    LOGL(initialTranslation << " " << translation);
+    return std::make_tuple(initialRotation, translation);
 }
 
 std::tuple<Matrix3d, Vector3d> Worker::applyNonLinearMinimization(Matrix3d &initialRotation, Vector3d &initialTranslation, cv::Mat &leftFrame, cv::Mat &rightFrame, std::vector<std::string> &algoParams)
@@ -437,20 +445,28 @@ void Worker::computePointCloud(const int workID, Mat &leftFrame, Matrix3d &Hl, M
     }
 }
 
-double Worker::modelFX(double x)
+double Worker::linearModelFX(double x)
 {
-    return 1.00003708e+00 -8.44384904e-04 * x -4.95059050e-01 * x * x;
+    return 1.00299382 - 0.05123665 * x;
 }
 
-double Worker::modelFY(double y)
+double Worker::linearModelFY(double y)
 {
-    return 8.07919462e-04 + 9.90181784e-01 * y;
+    return 0.02351091 + 0.44311857 * y;
+}
+
+double Worker::secondOrderModelFX(double x)
+{
+    return 1.00086285 - 0.02611081 * x - 0.05968082 * x * x;
+}
+
+double Worker::secondOrderModelFY(double y)
+{
+    return 0.01318154 + 0.5649101 * y -0.28928852 * y * y;
 }
 
 double Worker::modelFS(double s)
 {
     return 0.94433258 + 0.9565365 * s;
 }
-
-
 
