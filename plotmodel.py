@@ -53,7 +53,22 @@ if __name__ == '__main__':
     for row in reader:
         data.append((float(row[0]), -float(row[1]), float(row[2])))
 
+    # Find scale
+    lengths = []
+    for i, entry in enumerate(data):
+        lengths.append(math.sqrt(entry[2] * entry[2] + entry[1] * entry[1]))
 
+    minTheta = data[0][0]
+    lengthZero = lengths[0]
+    for i, entry in enumerate(data):
+        if minTheta > entry[0]:
+            lengthZero = lengths[i]
+            minTheta = entry[0]
+
+    for i, entry in enumerate(lengths):
+        lengths[i] = entry / lengthZero
+
+    # Find model X and Y
     # Normalizing vector
     for i, entry in enumerate(data):
         l = math.sqrt(entry[2] * entry[2] + entry[1] * entry[1])
@@ -63,4 +78,18 @@ if __name__ == '__main__':
 
     findModel("linear", funcLinear, tmp[0], tmp[1], tmp[2])
     findModel("quadratic", funcQuadratic, tmp[0], tmp[1], tmp[2])
+
+    poptX, pcovX = curve_fit(funcLinear, tmp[0], lengths)
+    xs = np.linspace(0., 0.4, 200)
+    ys = []
+    for x in xs:
+        ys.append(funcLinear([x], *poptX))
+
+    plt.figure()
+    plt.xlabel('bending angle', fontsize=18)
+    plt.ylabel('relative scale', fontsize=18)
+    plt.scatter(tmp[0], lengths)
+    plt.plot(xs, ys, 'r')
+    plt.savefig('model-scale.png')
+    plt.savefig('report/images/model-scale.png')
 

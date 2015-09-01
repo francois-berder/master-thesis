@@ -1230,20 +1230,30 @@ The model describes how the $x$ and $y$ components of the translation vector as 
 
 Notice that we define the y axis downwards to be consistent with the OpenCV library.
 \\
-To obtain data to create this model, I started by setting my smart phone parallel to the cameras, approximately 30 centimetres from them. I took a video while I was bending the plate. For every other frame of the video, I clicked on the same feature of the right camera: a black dot above the lens. Since the left camera did not move during the video, I clicked only once on the black dot. This step gave me 238 positions (in pixel coordinates) of the right camera and the position (also in pixel coordinates) of the left camera. I computed many translation vectors $(x, y)^\top$ from the left camera to the right camera. Using the fact that $\theta=acos(x)$ if $(x,y)^\top$ is a normalised vector, I was able to generate enough data to compute a model.
+To obtain data to create this model, I started by setting my smartphone parallel to the cameras, approximately 30 centimetres from them. I took a video while I was bending the plate. Then, for every other frame of the video, I clicked on six different points to create 3 vectors as shown in figure \ref{fig:model-software}:
 
-I chose a quadratic approximation for $f_x$ and a linear one for $f_y$ and $f_s$.
 \begin{figure}[H]
     \begin{center}
-        \includegraphics[scale=0.5]{images/newmodelx.png}
+        \includegraphics[scale=0.6]{images/model-software.png} 
+        \label{fig:model-software}
+        \caption{Software to obtain data}
+    \end{center}
+\end{figure}
+
+From red and green vectors, one could compute the bending angle $\theta$ and the blue vector was used to get x and y coordinates.
+I computed a linear and a quadratic approximation for both $f_x$ and $f_y$.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.5]{images/model-linear-x.png}
         \label{fig:newmodelX}
-        \caption{Approximation of $f_x(\theta) = a\theta^2 + b\theta + c$}
+        \caption{Approximation of $f_x(\theta) = a\theta + b$}
     \end{center}
 \end{figure}
 
 \begin{figure}[H]
     \begin{center}
-        \includegraphics[scale=0.5]{images/newmodely.png}
+        \includegraphics[scale=0.5]{images/model-linear-y.png}
         \label{fig:newmodelY}
         \caption{Approximation of $f_y(\theta) = a\theta+b$}
     \end{center}
@@ -1253,12 +1263,32 @@ Notice how $f_y$ is very close to the identity function.
 
 \begin{figure}[H]
     \begin{center}
-        \includegraphics[scale=0.5]{images/newmodel_scale.png}
+        \includegraphics[scale=0.5]{images/model-quadratic-x.png}
+        \label{fig:newmodelX}
+        \caption{Approximation of $f_x(\theta) = a\theta^2 + b\theta + c$}
+    \end{center}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.5]{images/model-quadratic-y.png}
+        \label{fig:newmodelY}
+        \caption{Approximation of $f_y(\theta) = a\theta^2 + b\theta + c$}
+    \end{center}
+\end{figure}
+
+Concerning $f_s$, a linear model was considered sufficient
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.5]{images/model-scale.png}
         \label{fig:newmodelS}
         \caption{Approximation of $f_s(\theta) = a\theta+b$}
     \end{center}
 \end{figure}
-$f_s$ describes how the scale varies given the bending angle $\theta$. I defined $f_s$ such that for the minimal angle $\theta_{min}$, $f(\theta_{min}) = 1$. This function is not sufficient to recover the real distance between both cameras because it is still up to scale.
+
+$f_s$ describes how the scale varies given the bending angle $\theta$. I defined $f_s$ such that for the minimal angle $\theta_{min}$, $f(\theta_{min}) = 1$. Figure \ref{fig:newmodelS} shows that the scale does not vary more than 20\% while the bending angle is at its maximum. This function is not sufficient to recover the real distance between both cameras because it is still up to scale.
+
 \section{Detecting points correspondence}
 
 Detecting enough points correspondences is vital for obtaining a result at the end because most algorithms used in this project do not perform directly on images but rather on points correspondences. First, feature detectors computes a list of features in both images as well as their descriptor. Then, feature point matching associates features belonging to different images, thus creating a list of points correspondence. Ideally, this step should be as fast as possible while having a very low number of mismatch.
@@ -1280,7 +1310,7 @@ average time per match & 2.32249ms & 0.090095ms \\
 \caption{Comparing SURF and ORB}
 \end{figure}
 
-From these figures, ORB is much faster than SURF. Evaluating the percentage of mismatch is harder to measure because I cannot compute a list of true points correspondence. One simple way to is to view these feature points. If the algorithm works well most lines joining two feature points are parallel. Here is one example with SURF and ORB:
+From these figures, ORB is much faster than SURF. Evaluating the percentage of mismatch is harder to measure because I cannot compute a list of true points correspondence. One simple way to is to view these feature points. If the algorithm works well most lines joining two feature points are parallel because feature points all lie on the same plane. Here is one example with SURF and ORB:
 
 \begin{figure}[H]
 \begin{tabular}{c}
