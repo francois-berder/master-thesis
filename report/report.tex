@@ -1,0 +1,1153 @@
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{comment}
+\usepackage{amsmath}
+\usepackage{commath}
+\usepackage{titlesec}
+\usepackage{url}
+\usepackage[]{algorithm2e}
+
+\begin{document}
+\RestyleAlgo{boxed}
+\LinesNumbered
+\begin{titlepage}
+	
+	\begin{center}
+	   
+	\vspace*{3cm}
+	
+	{\Large Personal project}\\[1cm]
+	{ \huge \bfseries \textsc{Project Report}}\\[0.2cm]
+	
+	\vspace*{1cm}
+	  	Fran\c{c}ois Berder - feb11\\
+     \vfill
+
+    % Bottom of the page
+    {\large \today}
+	\end{center}
+\end{titlepage}
+
+\section{Introduction}
+\section{Background}
+\subsection{Theory}
+
+The general finite projective camera is defined as:
+\[
+\left (
+\begin{matrix}
+	\alpha_x & s & p_x \\
+	0 & \alpha_y & p_y \\
+	0 & 0 & 1
+\end{matrix}
+\right )
+\]
+
+In our case, the skew $s$ is zero and $\alpha_x = \alpha_y$. Hence, the matrix can be rewritten as: 
+\[
+K = 
+\left (
+\begin{matrix}
+	f & 0 & p_x \\
+	0 & f & p_y \\
+	0 & 0 & 1
+\end{matrix}
+\right )
+\]
+$K$ is the camera calibration matrix. It is used to convert points into normalized images coordinates via the equation $\hat{\mathbf{x}} = K\mathbf{x}$.
+A pair of projection camera matrices $P$ and $P'$ defines a stereo rig. For convenience, we will always assume that the left camera is at the origin, so $P = [I|0]$. $P'=[R|t]$. Where $t$ is the translation vector from the left camera to the right camera and $R$ is a rotation matrix.
+
+To project point $\mathbf{x} = (X, Y, Z, 1)^\top$ in the left image:
+\[
+P\mathbf{x} = K[I|0]\mathbf{x} =  K
+\left (
+\begin{matrix}
+	f & 0 & p_x & 0\\
+	0 & f & p_y & 0\\
+	0 & 0 & 1   & 0
+\end{matrix}
+\right )
+\left (
+\begin{matrix}
+	X \\
+	Y \\
+	Z \\
+	1
+\end{matrix}
+\right )
+= K
+\left (
+\begin{matrix}
+	fX + Zp_x \\
+	fY + Zp_y \\
+	Z
+\end{matrix}
+\right )
+\]
+
+The fundamental matrix $F$ describes how a pair of points correspondence $\mathbf{x}' \leftrightarrow \mathbf{x}$ is related: $\mathbf{x}'F\mathbf{x} = 0$. Using the fundamental matrix it is also possible to compute epipolar lines:
+\[
+  \begin{array}{lcl}
+        \mathbf{l}' & = & F\mathbf{x} \\
+        \mathbf{l} & = & F^\top\mathbf{x}' \\
+  \end{array}
+\]
+
+The epipole is the point where all epipolar lines meets, $\mathbf{e}$ and $\mathbf{e}'$ are respectively the left and the right null-vector of $F$. Hence, it verifies the equation $F\mathbf{e} = \mathbf{0}$ and $F^\top\mathbf{e}' = \mathbf{0}$. To compute the epipoles, we use the following formulas:
+\[
+  \begin{array}{lcl}
+        \mathbf{e} & = & KR^\top \mathbf{t} \\
+        \mathbf{e}' & = & K'\mathbf{t} \\
+  \end{array}
+\]
+
+Assuming that $P=[I|0]$, the right epipole is useful to compute a generalized version of $P'$ (this avoids converting points in normalized images coordinates):
+
+\[
+    P' = [[\mathbf{e}']_xF|\mathbf{e}']
+\]
+
+The essential matrix is a less generalized version of the fundamental matrix. Given a point correspondence in normalized image coordinates $\hat{\mathbf{x}}' \leftrightarrow \hat{\mathbf{x}}$, the essential matrix verifies the equation $\hat{\mathbf{x}}'^\top E\hat{\mathbf{x}} = 0$. And since we know that: $\hat{\mathbf{x}} = K\mathbf{x}$, then $\hat{\mathbf{x}}'^\top E\hat{\mathbf{x}} = \mathbf{x}'K'^\top EK\mathbf{x} = 0$. Hence:
+
+\[
+	E = K'^\top FK
+\]
+
+Furthermore, in the case of a pair of normalized camera matrices defined as $P =[I|0]$ and $P'=[R|t]$, the essential matrix is :
+
+\[
+    E = [t]_x R
+\]
+
+From the essential matrix, the rotation matrix $R$ and the translation vector $t$ can then be derived. Let assume that the SVD of $E$ is $Udiag(1, 1, 0)V^\top$, then is possible to factorize $E = SR$, with:
+\[
+\left .
+  \begin{array}{ccl}
+        W & = & \left (
+                \begin{matrix}
+	                0 & -1 & 0 \\
+	                1 & 0 & 0 \\
+	                0 & 0 & 1 \\
+                \end{matrix}
+                \right ) \\
+        Z & = & \left (
+                \begin{matrix}
+	                0 & 1 & 0\\
+	                -1 & 0 & 0\\
+	                0 & 0 & 0 \\
+                \end{matrix}
+                \right ) \\
+        S & = & UZU^\top \\
+        R & = & UWV^\top \quad or\quad UW^\top V^\top \\
+  \end{array}
+\right.
+\]
+Notice that $W = W^\top$ and $ZW = ZW^\top = diag(1, 1, 0)$. This is used to prove that $E$ can be factorized into $SR$: 
+\[
+    SR = (UZU^\top)(UWV^\top) = UZWV^\top = Udiag(1, 1, 0)V^\top = E
+\]
+
+Using the fact that $E =[t]_x R$ and $E = SR$, so $S=[t]_x$. In addition, $St = \mathbf{0}$ so $t = U(0, 0, 1)^\top$. In other words, $t$ is equal to the last colum of $U$. If we assume that left camera matrix $P = [I|0]$, then there are four possible solutions for $P'$:
+
+\[
+    [R|t] = K'[UWV^\top | +\mathbf{u}_3] or K'[UW^\top V^\top | +\mathbf{u}_3] or K'[UWV^\top | -\mathbf{u}_3] or  K'[UW^\top V^\top | -\mathbf{u}_3]
+\]
+
+To find the correct solution, it is necessary to triangulate a few points and check if most of them are in front of both cameras. In theory, using one point is enough but it may happen that the triangulation fails because of outliers.
+
+\subsubsection{Triangulation}
+
+I present three triangulation algorithms which I implemented for this project. Further explanations about these algorithms and others are described in \cite{tri97}. The optimal triangulation was implemented from the description in the book \textit{Multiple View Geometry in computer vision} by Richard Hartley, Andrew Zisserman\cite{Geom}.
+
+\paragraph{Linear Eigen:}
+
+This is the simplest triangulation algorithm. Given a 3D point $\mathbf{X}$, it follows that $\mathbf{x} = P\mathbf{X}$ and $\mathbf{x}'=P'\mathbf{X}$. Furthermore, we know that $\mathbf{x} \times (P\mathbf{X}) = \mathbf{0}$. This gives a set of three equations (provided that $\textbf{x}$ is converted into homogeneous form):
+\[
+\left.
+  \begin{array}{rcr}
+    x(\mathbf{p}^{3\top}\mathbf{X}) - (\mathbf{p}^{1\top}\mathbf{X}) & = & 0\\
+    y(\mathbf{p}^{3\top}\mathbf{X}) - (\mathbf{p}^{2\top}\mathbf{X}) & = & 0\\
+    x(\mathbf{p}^{2\top}\mathbf{X}) - y(\mathbf{p}^{1\top}\mathbf{X}) & = & 0\\
+  \end{array}
+\right.
+\]
+The last equation is linearly dependent to the first two equations, so we don't use it. Similarly, $\mathbf{x}' \times (P'\mathbf{X}) = \mathbf{0}$ gives two additional equations. The set of four equations are combined in the matrix $A$:
+
+\[
+A = 
+\left [
+  \begin{array}{r}
+    x(\mathbf{p}^{3\top}\mathbf{X}) - (\mathbf{p}^{1\top}\mathbf{X}) \\
+    y(\mathbf{p}^{3\top}\mathbf{X}) - (\mathbf{p}^{2\top}\mathbf{X}) \\
+    x'(\mathbf{p}'^{3\top}\mathbf{X}) - (\mathbf{p}'^{1\top}\mathbf{X}) \\
+    y'(\mathbf{p}'^{3\top}\mathbf{X}) - (\mathbf{p}'^{2\top}\mathbf{X}) \\
+  \end{array}
+\right ]
+\]
+
+Hence, we need to solve $A\mathbf{X} = \mathbf{0}$. This is done using a single value decomposition of the matrix $A$ and setting $\mathbf{X}$ as the right eigen vector corresponding to the null eigen value.
+However, this method is quite imprecise because it is rarely the case that $\mathbf{x} \times (P\mathbf{X})$ is equal to zero. 
+
+\paragraph{Mid-point triangulation:} 
+
+The 3D point is the mid-point belonging to the common perpendicular to the two rays coming from each point. Let assume that the left camera matrix is at the origin and that the translation vector $T$ from the left camera to the right camera is known. Hence, the right camera matrix is at position $t$. Furthermore, the decomposition of the left camera matrix is $\mathbf{P} = [I|\mathbf{0}]$ and the right camera matrix is $\mathbf{P}' = [M' | -M'T]$. Let $\mathbf{l}(\alpha) = \alpha\mathbf{x}$ be the parametric equation of the ray coming from the left image and $\mathbf{l}'(\alpha') = T + \alpha' M'^{-1}\mathbf{x}'$, the parametric equation of the ray coming from the right image (we assume that $\mathbf{x}$ and $\mathbf{x}'$ are in homogeneous coordinates). Since the two rays must intersect, we need to find $\alpha$ and $\alpha'$ such that $\mathbf{l}(\alpha) = \mathbf{l}'(\alpha')$, which gives a set of three equations. Using linear square method, we can find $\alpha$ and $\alpha'$ and compute $\mathbf{X} = \frac{1}{2} (\alpha \mathbf{x} + T + \alpha' M'^{-1} \mathbf{x}')$.
+
+\paragraph{Optimal solution:}
+
+Given a measured point correspondence $\mathbf{x} \leftrightarrow \mathbf{x}'$, the optimal solution computes the points $\hat{\mathbf{x}} \leftrightarrow \hat{\mathbf{x}}'$ that minimizes the geometric error and verifies $\hat{\mathbf{x}}'^{\top}F\hat{\mathbf{x}} = 0$. The geometric error is the sum of the squared distance between a point and the corresponding epipolar line:
+
+\[
+ \epsilon_{geometric} = d(\mathbf{x}, F\mathbf{x}')^2 + d(\mathbf{x}', F\mathbf{x})^2
+\]
+
+To simplify formulas, we assume that $\mathbf{x} = \mathbf{x}' = (0, 0, 1)^\top$ and that the two epipoles are at position $(1, 0 f)^\top$ and $(1, 0, f')^\top$. In this case, the fundamental matrix $F$ has form:
+
+\[
+F =
+\left (
+\begin{matrix}
+	ff'd & -f'c & -f'd \\
+	-fb & a & b \\
+	-fd & c & d
+\end{matrix}
+\right )
+\]
+
+Let assume that the epipolar line in the left image goes through the point $(0, t, 1)^\top$. Then, it also goes through the epipole $(1, 0 f)^\top$. Hence, the vector representing the line is:  $\mathbf{l}(t) = (0, t, 1) \times (1, 0 f) = (tf, 1, -t)$. This is a parametric representation of the epipolar line. The squared distance from the line to the origin ($\mathbf{x}$ is at the origin) is:
+
+\[
+    d(\mathbf{x}, \mathbf{l}(t))^2 = \frac{t^2}{1+(tf)^2}
+\]
+
+Similarly, the epipolar line in the right image is:
+\[
+    \mathbf{l}'(t) = F(0, t, 1)^\top = (-f'(ct+d), at+b, ct+d)^\top
+\]
+The squared distance to $\mathbf{l}'(t)$ is:
+
+\[
+    d(\mathbf{x}', \mathbf{l}'(t))^2 = \frac{(ct+d)^2}{(at+b)^2+f'^2(ct+d)^2}
+\]
+
+Hence, the total squared distance to minimize is:
+\[
+    s(t) = \frac{t^2}{1+f^2t^2} + \frac{(ct+d)^2}{(at+b)^2+f'^2(ct+d)^2}
+\]
+
+The minimization translates to finding the roots of the derivate of the function $s$: 
+\[
+    s'(t) = t((at+b)^2 + f'^2(ct+d)^2)^2 - (ad-bc)(1+f^2t^2)^2(at+b)(ct+d)
+\]
+This is done using linear gradient descent algorithm. Once the global minimum of $s$ is known at $t_{min}$, we can now compute $\mathbf{l}$ and $\mathbf{l}'$ and find the corrected correspondences $\hat{\mathbf{x}}$ and $\hat{\mathbf{x}}'$:
+
+\[
+\left .
+  \begin{array}{ccl}
+    \hat{\mathbf{x}} & = & (t_{min}^2f, t_{min}, t_{min}^2f^2+1)^\top \\
+    \hat{\mathbf{x}}' & = & (f'(ct_{min}+d)(at_{min}+b), -(at_{min}+b)(ct+d), f'^2(ct_{min}+d)^2+(at_{min}+b)^2)\\
+  \end{array}
+\right .
+\]
+
+Finally, the 3D point $\mathbf{X}$ is found using Linear Eigen triangulation with $\hat{\mathbf{x}}$ and $\hat{\mathbf{x}}'$ as input. 
+
+\subsection{Computing the fundamental matrix}
+
+\subsubsection{Eight-point algorithm}
+
+This is the simplest method for estimating the fundamental matrix $F$ from at least 8 points correspondence. Assuming that a point correspondence $\mathbf{x} \leftrightarrow \mathbf{x}'$ with $\mathbf{x} = (x, y 1)^\top$ and $\mathbf{x}' = (x', y' 1)^\top$, then $F$ verifies $\mathbf{x}'^\top F\mathbf{x} = 0$:
+
+\[
+    x'x\mathit{f}_{11} + x'y\mathit{f}_{11} + x'\mathit{f}_{13} + y'x\mathit{f}_{21} + y'y\mathit{f}_{22} + y'\mathit{f}_{23} + x\mathit{f}_{31} + y\mathit{f}_{32} + \mathit{f}_{33} = 0
+\]
+
+Let $\mathbf{f}$ a vector made up of the entries of $F$ in row-major order. The equation becomes:
+
+\[
+(x'x, x'y, x', y'x, y'y, y', x, y, 1)\mathbf{f} = 0
+\]
+
+For $n$ points correspondence, we obtain a set of linear equations of the form:
+
+\[
+    A\mathbf{f} = 
+\left [
+  \begin{array}{ccccccccc}
+    x'_1x_1 & x'_1y_1 & x'_1 & y'_1x_1 & y'_1y_1 & y'_1 & x_1 & y_1 & 1 \\
+    \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots \\
+    x'_nx_n & x'_ny_n & x'_n & y'_nx_n & y'_ny_n & y'_n & x_n & y_n & 1 \\
+  \end{array}
+\right ] 
+\mathbf{f} = 0
+\]
+
+Using a SVD decomposition of $A$ such that $A = UDV^\top$, the solution vector $\mathbf{f}$ is the last column of $V$.
+Due to the fact that $\mathbf{x}'^\top F\mathbf{x}$ is in general not equal to zero because of noise in images, the fundamental matrix $F$ is not singular. To find a singular matrix $F'$ which minimizes the frobenius norm $F - F'$ , we use an SVD decomposition of $F$ such that $F = Udiag(r, s, t)V^\top$ with $r \geq s \geq t$ and compute $F' = Udiag(r, s, 0)V^\top$. $F'$ is the output of the eight point algorithm.
+
+The eight-point algorithm must be implemented with care, otherwise it might be too sensitive to noise. Hartley suggested to normalize data\cite{DefenceEightPoint} to reduce errors when enforcing singularity constraint on $F$. Data normalization consists in computing a transformation $T$ (a translation and a scaling) from a set of points (belonging to the same image) such that the centroid is the origin and the average distance to the origin is $\sqrt{2}$. Let assume that $T$ and $T'$ are transformations for left points and right points set respectively, the algorithm described above finds a solution $\widetilde{F}$ from the normalized data. The denormalized output $F$ is $F = T'^{-1}\widetilde{F}T$. The normalization ensures that entries of the matrix $A$ have the same order of magnitude which helps reducing errors when $F'$ is replaced by a singular matrix $F$.
+The seventh-point algorithm is very similar to the eight-point algorithm but it uses the fact that the fundamental matrix has a null determinant.
+
+\subsubsection{Five-point algorithm}
+
+The five-point algorithm proposed by Nister\cite{FivePointNister04} is able to compute a fundamental matrix from only five points correspondence. Similarly to the eight-point algorithm, it uses the following relationship between points correspondence and the fundamental matrix:
+
+\begin{equation}
+  \label{eq:fivepoint1}
+  \mathbf{x}'^\top F \mathbf{x} = 0
+\end{equation}
+
+However, five points correspondence is not enough to compute the fundamental matrix. In addition, it exploits special properties about the fundamental and essential matrix
+\begin{equation}
+  \label{eq:fivepoint2}
+  \text{det}(F) = 0
+\end{equation}
+
+and, 
+
+\begin{equation}
+  \label{eq:fivepoint3}
+  EE^\top E - \frac{1}{2} trace(EE^\top)E = 0 
+\end{equation}
+
+Each constraint from \ref{eq:fivepoint1} can be rewritten as: 
+
+\begin{equation}
+  \label{eq:fivepoint4}
+  \tilde{q}^\top \widetilde{E} = 0
+\end{equation}
+
+with 
+
+\begin{align}
+\tilde{q} \equiv \left [ \begin{matrix} \mathbf{q}_1\mathbf{q}'_1 &
+  \mathbf{q}_2\mathbf{q}'_1 &
+ \mathbf{q}_3\mathbf{q}'_1 &
+ \mathbf{q}_1\mathbf{q}'_2 &
+ \mathbf{q}_2\mathbf{q}'_2 &
+ \mathbf{q}_3\mathbf{q}'_2 &
+ \mathbf{q}_1\mathbf{q}'_3 & 
+ \mathbf{q}_2\mathbf{q}'_3 &
+ \mathbf{q}_3\mathbf{q}'_3
+ \end{matrix} \right]^\top \\
+\tilde{E} \equiv \left [ 
+\begin{matrix}
+E_{11} & 
+E_{12} & 
+E_{13} & 
+E_{21} & 
+E_{22} & 
+E_{23} & 
+E_{31} & 
+E_{32} &
+E_{33} 
+\end{matrix}
+\right ] ^\top
+\end{align}
+
+
+Constraints obtained from \ref{eq:fivepoint4} are stacked in a $5\times 9$ matrix. After computation of eigen values and their corresponding eigen vectors $X, Y, Z, W$. We can rewrite the essential matrix into a linear combination of the eigen vectors:
+
+\begin{equation}
+  \label{eq:fivepoint5}
+  E = xX + yY + zZ + wW  
+\end{equation}
+
+In the case where more than five points correspondence are used (overdetermined case), the four eigen vectors corresponding to the four smallest eigen values are used. Since, $x, y, z, w$ are only defined up to scale, we choose $w=1$. The next step consists in finding the values of $x$, $y$ and $z$. Using result from \ref{eq:fivepoint5} and replacing it into equations \ref{eq:fivepoint2} and \ref{eq:fivepoint3} leads to matrix A:
+
+\begin{center}
+\begin{tabular}{|c| c c c c c c c c c c c c c|}
+  \hline
+  A & $x^3$ & $y^3$ & $x^2y$ & $xy^2$ & $x^2z$ & $x^2$ & $y^2z$ & $y^2$ & $xyz$ & $xy$ & $x$ & $y$ & $1$ \\
+  $\langle$a$\rangle$ & 1 & . & . & . & . & . & . & . & . & . & [2] & [2] & [3] \\
+  $\langle$b$\rangle$ & & 1 & . & . & . & . & . & . & . & . & [2] & [2] & [3] \\
+  $\langle$c$\rangle$ & & & 1 & . & . & . & . & . & . & . & [2] & [2] & [3] \\
+  $\langle$d$\rangle$ & & & & 1 & . & . & . & . & . & . & [2] & [2] & [3] \\
+  $\langle$e$\rangle$ & & & & & 1 & . & . & . & . & . & [2] & [2] & [3] \\
+  $\langle$f$\rangle$ & & & & & & 1 & . & . & . & . & [2] & [2] & [3] \\
+  $\langle$g$\rangle$ & & & & & & & 1 & . & . & . & [2] & [2] & [3] \\
+  $\langle$h$\rangle$ & & & & & & & & 1 & . & . & [2] & [2] & [3] \\
+  $\langle$i$\rangle$ & & & & & & & & & 1 & . & [2] & [2] & [3] \\
+  $\langle$j$\rangle$ & & & & & & & & & & 1 & [2] & [2] & [3] \\
+  \hline
+\end{tabular}
+\end{center}
+$[N]$ denotes a $N$ degree polynomial in $z$. In addition, we define the following equations: 
+
+\[
+  \begin{array}{r c l}
+    \langle k \rangle \equiv \langle e \rangle - z \langle f \rangle \\
+    \langle l \rangle \equiv \langle g \rangle - z \langle h \rangle \\
+    \langle m \rangle \equiv \langle i \rangle - z \langle j \rangle \\
+  \end{array}
+\]
+
+We can now build a $3\times 3$ matrix $B$:
+
+\begin{center}
+\begin{tabular}{|c| c c c|}
+  \hline
+  B & x & y & 1 \\
+  \hline
+  $\langle$k$\rangle$ & [3] & [3] & [4] \\
+  $\langle$l$\rangle$ & [3] & [3] & [4] \\
+  $\langle$m$\rangle$ & [3] & [3] & [4] \\
+  \hline
+\end{tabular}
+\end{center}
+
+The vector $(x, y, 1)^\top$ is a nullvector to B, so it means that $det(B) = 0$. Hence, we need to solve polynomial $\langle n\rangle$ defined as:
+
+\begin{equation}
+  \langle n \rangle \equiv det(B)
+\end{equation}
+
+From each root $z$ of $\langle n\rangle$, $x$ and $y$ can be recovered using matrix $B$ and thus the essential matrix E. Since $\langle n \rangle$ is a tenth degree polynomial, there are 10 possible essential matrices but only the one that yields the least error is kept. Finally, the fundamental matrix can be derived from the essential matrix.
+
+
+\subsubsection{RANSAC}
+
+RANSAC\cite{Ransac81} was introduced by Martin A. Fischler and Robert C. Bolles as a new paragdim to extract a model from data. The main advantage of this algorithm lies in its robustness to gross errors in data which is achieved by randomly using a subset of the data to compute a model and check it to the entire dataset. This model finding is realized many times and the best model is the one which has the highest support from data. That is why this algorithm is named RANSAC which stands for RAndom SAmple Consensus. 
+There exist many variants of RANSAC to compute the fundamental matrix from a list of points correspondence. Here is one possible version of RANSAC.
+
+\paragraph{Overview}
+
+The first stage of the algorithm is repeated $N$ times. It selects a small sample of the dataset and use an algorithm to compute the fundamental matrix such as the eight-point algorithm. Afterwards, an error function is evaluated for each pair of points. If the error is less than a predefined threshold, the pair of points is considered as an inlier. Otherwise, it is an outlier. Then, it selects the model which has the highest number of inliers. If several solutions are possible, it keeps the fundamental matrix which has the lowest standard deviation of inliers. Finally, the fundamental matrix is improved by using a non-linear algorithm such as the Levenberg-Marquardt algorithm.
+
+\begin{algorithm}[H]
+ \KwIn{A list of pairs of points}
+ \KwOut{Fundamental matrix F}
+ \tcp{Model estimation}
+ \For{N times}{
+    Select 8 pairs of points at random\;
+    Compute fundamental matrix using the 8-point normalized algorithm\;
+    Compute the number of inliers\;
+  }
+  \tcp{Model selection}
+  Select fundamental matrix with highest number of inliers\;
+  \tcp{Refinement}
+  Use all inliers to refine the fundamental matrix using the Levenberg-Marquardt algorithm
+ \caption{Overview of RANSAC algorithm for computing fundamental matrix}
+\end{algorithm}
+
+\paragraph{Computation of $N$:}
+
+$N$ depends on the estimated proportion of outliers $\epsilon$ and the probability $p$ that $s$ pertinent points are selected. It follows that a pertinent point is selected with probablity $1 - \epsilon$, and $s$ pertinent points are selected with probablity $(1 - \epsilon)^s$. Thus, $1 - p = (1 - (1 - \epsilon)^s)^N$. Hence:
+\[
+    N = \frac{log(1 - p)}{log(1 - (1 - \epsilon)^s)}
+\]
+
+Usually, we estimate that 5\% of the data are outliers and we take $p=0.99$. $s$ is the size of the sample for computing $F$ at each iteration. Since we are using the eight-point algorithm $s=8$ but it depends on the choice of the algorithm to compute the fundamental matrix. Alternatively, $N$ can be chosen adaptively to speed up the algorithm. Indeed, the computation of $N$ described above depends on an estimation of the proportion of outliers which may not be correct given the inputs provided. Hence, a lower or greater value of $N$ would be better if it would depend on the measured number of inliers instead.
+
+\paragraph{Algorithm for computing $F$:}
+
+There exists several algorithms for computing a fundamental matrix from a minimal set of points correspondence. The eight-point algorithm is used by default in the OpenCV library implementation of RANSAC but other algorithms such as the fifth-point algorithm by Nister\cite{FivePointNister04} may be more appropriate for dealing with degenerate data.
+
+\paragraph{Determining inliers}
+
+A pair of points $x_i' \leftrightarrow x_i$ is considered as an inlier if $d(x_i', Fx_i)$ and  $d(x_i, F^\top x_i')$ are both less than a threshold $t$. Other error functions such as the reprojection error or the Sampson approximation error can also be used.
+
+\paragraph{Error function in non-linear optimization}
+
+During the refinement of the fundamental matrix, several error functions can be chosen. I am presenting the cost function described in the version of RANSAC described by A. Zisserman\cite{Ransac97} which is a mix of algebraic and geometric error. The algebraic error $d_i$ for each point correspondence is the shortest distance from a point $x_i$ to the corresponding epipolar line. The geometric error $e_i$ is the reprojection error: the distance between the measured point and the projected point of the 3D point obtained by triangulating the measured points correspondence. The variance of the algebraic and geometric error is also computed, $\sigma$ and $\sigma_l$ respectively. The total error function is:
+
+\[
+    D = \sum_i \frac{d_i^2}{\sigma^2} + \sum_i \frac{e_i^2}{\sigma_l^2}
+\]
+
+A more robust version of this error function use the Huber function to take into account outliers which introduces some biases in the computation of the variance. Hence, the error function becomes:
+
+\[
+    D = \sum_i \gamma(\frac{d_i}{\sigma}) + \sum_i \gamma(\frac{e_i}{\sigma_l})
+\]
+
+where $\gamma$ is defined as:
+
+\[
+    \gamma(x) = 
+\left \{
+  \begin{array}{l l}
+        x^2 & x < 1.96 \\
+        1.96^2 & x \geq 1.96 \\
+  \end{array}
+\right.
+\] 
+
+The value $1.96$ ensures that an inlier is incorrectly rejected in only 5\% of the time.
+
+\subsubsection{QDEGSAC}
+
+RANSAC works well if the distribution of points in the scene. For instance, if most points lie on a plane, RANSAC often returns degenerate solutions which are only valid for those points but invalid with regards to the reality. To overcome this issue, QDEGSAC\cite{Qdegsac06} is an algorithm built on top of RANSAC.
+
+\begin{algorithm}[H]
+  \KwIn{A list of pairs of points}
+  \KwOut{Fundamental matrix F}
+  \tcp{Initial run}
+  Run RANSAC using all data\;
+  \tcp{Model selection}
+  \While{$\#{inliers}_k \leq t_{red} * \#{inliers}_0$}{
+  Run RANSAC using inliers from step $k-1$\;
+  }
+  \tcp{Model completion}
+  Run RANSAC using all outliers from the initial run and inliers from the last step of model selection\;
+ \caption{Overview of QDEGSAC algorithm}
+\end{algorithm}
+
+The threshold $t_{red}$ is chosen in the range 50\% - 80\% of the number of inliers from the initial run. In practice, the algorithm is not sensitive to the value of $t_{red}$. The goal of the model selection is to remove points which don't add any information. If mosts points correspondence lie on the same plane, RANSAC has a high probablity to choose only those points and consider any points correspondence not lying on this plane as outliers. By removing some of these points, the probability becomes higher that RANSAC uses some of these points and others to compute a solution. Selecting points lying in different planes does not lead to degenerate solutions.
+
+\subsection{Levenberg-Marquard algorithm}
+
+The Levenberg-Marquard algorithm is a variation of the Gauss-Newton iteration method to minimize a sum of squared function. Let assume $\mathbf{X}$ is a measurement vector which approximates the true measurement vector $\bar{\mathbf{X}}$ and $\mathbf{X} = \mathbf{f}(\mathbf{P})$ where $\mathbf{P}$ is the corresponding parameter vector. We seek to find a parameter vector $\widehat{\mathbf{P}}$ such that $\mathbf{X} = \mathbf{f}(\widehat{\mathbf{P}}) - \epsilon$ where $\mid\mid\epsilon\mid\mid$ is minimized. Although the function $\mathbf{f}$ might not be linear, we assume that it is locally linear. The algorithm starts with a first estimated solution $\mathbf{P}_0$ and compute successive approximations:
+\[
+  \mathbf{P}_{i+1} = \mathbf{P}_i + \delta_i
+\] 
+
+There are several methods to compute $\delta$. The Gauss-Newton method update equation is: 
+
+\begin{equation}
+  \label{eq:gauss-newton-update}
+  J^\top J\delta = -J^\top \epsilon
+\end{equation}
+
+Compared to the Newton method, the hessian matrix is approximated by $J^\top J$. Another approach is the linear gradient descent algorithm whose update equation is:
+
+\begin{equation}
+  \label{eq:linear-gradient-update}
+ \lambda \delta = -J^\top \epsilon
+\end{equation}
+
+$\lambda$ is a parameter that determines the size of the step. It can either be fixed but this yields poor results or using line search in the downward gradient descent. The novelty of the Levenberg-Marquardt algorithm is that it combines \ref{eq:gauss-newton-update} and \ref{eq:linear-gradient-update}. It transforms the Gauss-Newton update equation $J^\top J\delta = -J^\top \epsilon$ into the equation:
+
+\begin{equation}
+  \label{eq:lm_update}
+  (J^\top J + \lambda I)\delta = -J^\top \epsilon
+\end{equation}
+ This speeds up the convergence because the Gauss-Newtown does not work well if the function is in a tight corner ($J^\top J$ close to zero). Using a linear gradient descent approach in these situations garantees a decrease at every iteration.
+
+
+\subsubsection{Application to reprojection error minimization}
+
+The Levenberg-Marquard is only used in this project to minimize the reprojection error of a fundamental matrix $F$ given a list of 3D points obtained by triangulation. The measurement vector $\mathbf{X} = (\mathbf{X}_1, \mathbf{X}_2, \hdots, \mathbf{X}_n)^\top$ where each $\mathbf{X}_i = (\mathbf{x}_i^\top, \mathbf{x}'^\top_i)^\top$ contains the $i$-th measured pair of points.
+The parameter vector $\mathbf{P}$ is split into $\mathbf{a}$ and $\mathbf{b}$, thus $\mathbf{P}=(\mathbf{a}^\top, \mathbf{b}^\top)^\top$. $\mathbf{a}$ is a 12-vector made up of the entries of the right projection matrix P' (which can be derived from the fundamental matrix $F$) and $\mathbf{b}=(b_1, b_2, \hdots, b_n)^\top$ where $b_i = (X_i, Y_i, T_i)^\ast$ is a 3-vector of the $i$-th 3D point $(X_i, Y_i, 1, T_i)^\top$. The function $\mathbf{f}$ is the projection function: $\mathbf{f}(\mathbf{P}', \mathbf{b}_i) = (P\mathbf{b}_i, P'\mathbf{b}'_i)^\top = (\widehat{\mathbf{x}}_i^\top, \widehat{\mathbf{x}}'^\top_i)^\top = \widehat{\mathbf{X}}_i$.
+
+Due to the structure of the parameter vector $\mathbf{P}$, the jacobian matrix becomes $J = \left [ \frac{\partial\widehat{\mathbf{X}}}{\partial \mathbf{P}} \right ]$ is made of two blocks $J=\left [ A\mid B\right ]$ where:
+
+\[
+A = \left [ \frac{\partial\widehat{\mathbf{X}}}{\partial\mathbf{a}}\right ]
+\]
+and
+\[
+B = \left [ \frac{\partial\widehat{\mathbf{X}}}{\partial\mathbf{b}}\right ]
+\]
+
+The normal equation \ref{eq:lm_update} becomes: 
+
+\begin{equation}
+    \label{eq:lm_update2}
+    \left ( 
+    \begin{matrix}
+        A^\top\Sigma^{-1}_{\mathbf{X}}A &  A^\top\Sigma^{-1}_{\mathbf{X}}B \\
+        B^\top\Sigma^{-1}_{\mathbf{X}}A &  B^\top\Sigma^{-1}_{\mathbf{X}}B \\
+    \end{matrix}
+    \right )
+    \left (
+    \begin{matrix}
+      \delta_A \\
+      \delta_B \\
+    \end{matrix}
+    \right )
+    =
+    \left (
+    \begin{matrix}
+        A^\top\Sigma^{-1}_{\mathbf{X}}\epsilon \\
+        B^\top\Sigma^{-1}_{\mathbf{X}}\epsilon \\
+    \end{matrix}
+    \right )
+\end{equation}
+
+If the covariance matrix $\Sigma^{-1}_{\mathbf{X}}$ is not known then it can be replaced by the identity matrix. To simplify notations, we introduce matrices U, V and W;
+
+\[
+    \left ( 
+    \begin{matrix}
+        A^\top\Sigma^{-1}_{\mathbf{X}}A &  A^\top\Sigma^{-1}_{\mathbf{X}}B \\
+        B^\top\Sigma^{-1}_{\mathbf{X}}A &  B^\top\Sigma^{-1}_{\mathbf{X}}B \\
+    \end{matrix}
+    \right )
+=
+\left (
+  \begin{matrix}
+      U & W \\
+      W^\top & V \\
+  \end{matrix}
+\right )
+\]
+
+Equation \ref{eq:lm_update2} is simplified to:
+
+\begin{equation}
+  \label{eq:lm_update3}
+  \left (
+    \begin{matrix}
+        U & W \\
+        W^\top & V \\
+    \end{matrix}
+  \right )
+  \left (
+  \begin{matrix}
+    \delta_A \\
+    \delta_B \\
+  \end{matrix}
+  \right )
+  = 
+  \left (
+  \begin{matrix}
+    \epsilon_A \\
+    \epsilon_B \\
+  \end{matrix}
+  \right )
+\end{equation}
+
+To find $\delta_A$ and $\delta_B$, we multiply each side of the equation \ref{eq:lm_update3} on the left by $\left [ \begin{matrix} I & -WV^{\ast -1} \\ 0 & I \\ \end{matrix} \right ]$:
+
+\begin{equation}
+  \label{eq:lm_update4}
+  \left (
+    \begin{matrix}
+        U^\ast - WV^{\ast -1}W^\top & 0 \\
+        W^\top & V^\ast \\
+    \end{matrix}
+  \right )
+  \left (
+  \begin{matrix}
+    \delta_A \\
+    \delta_B \\
+  \end{matrix}
+  \right )
+  = 
+  \left (
+  \begin{matrix}
+    \epsilon_A - WV^{\ast -1}\epsilon_B \\
+    \epsilon_B \\
+  \end{matrix}
+  \right )
+\end{equation}
+
+From equation \ref{eq:lm_update4}, we obtain the following equations:
+
+\begin{equation}
+  (U^\ast - WV^{\ast -1}W^\top)\delta_A = \epsilon_A - WV^{\ast -1}\epsilon_B
+\end{equation} 
+
+\begin{equation}
+  V^\ast\delta_B = \epsilon_B - W^\top\delta_A
+\end{equation} 
+
+
+Furthermore, the computation of the solution $\delta$ of the normal equation \ref{eq:lm_update} is of complexity $N^3$. We need to take into account the fact that $J$ has a special structure. The jacobian matrix $J$ is mostly full of zeros because each entry $\mathbf{b}_i$ is independent from each other and is related with only $\mathbf{a}$. Hence, we are using a sparse variant of the Levenberg-Marquardt algorithm.
+
+The computation of each partial derivative matrix $A_i$:
+
+\[
+A_i = \frac{\partial\widehat{\mathbf{X}}_i}{\partial\mathbf{a}} = \frac{\partial\mathbf{f}(\mathbf{a}, \mathbf{b}_i)}{\partial\mathbf{a}} = 
+\left [ 
+  \begin{matrix}
+    \frac{\partial \widehat{\mathbf{x}}_i}{\partial\mathbf{a}} \\
+    \frac{\partial \widehat{\mathbf{x}}'_i}{\partial\mathbf{a}} \\
+  \end{matrix}
+\right ]
+= 
+\left [ 
+  \begin{matrix}
+    0 \\
+    \frac{\partial \widehat{\mathbf{x}}'_i}{\partial\mathbf{a}} \\
+  \end{matrix}
+\right ]
+\]
+
+The computation of each partial derivative matrix $B_i$:
+\[
+B_i = \frac{\partial\widehat{\mathbf{X}}_i}{\partial\mathbf{b}} = \frac{\partial\mathbf{f}(\mathbf{a}, \mathbf{b}_i)}{\partial\mathbf{b}} =
+ \left [ 
+  \begin{matrix}
+    I_{2\times 2} \mid \mathbf{0} \\
+    \frac{\partial \widehat{\mathbf{x}}'_i}{\partial\mathbf{b}} \\
+  \end{matrix}
+\right ]
+\]
+
+\begin{algorithm}[H]
+  \KwIn{A list of pairs of points}
+  \KwIn{Initial estimation of fundamental matrix $F_{initial}$}
+  \KwOut{refined Fundamental matrix F}
+  \tcp{Triangulation}
+  Triangulate each pair of points to obtain a list of 3D points $\mathbf{X}_i$\;
+  \tcp{Iterative minimization}
+  \Repeat{$\abs{error_{k} - error_{k-1}} < t$}{
+    \tcp{Compute $A_i$ and $B_i$}
+    $A_i = \left [ 0 \right ]$\;
+    $B_i$\;
+
+    \tcp{Compute error vector}
+    $\epsilon_i = \mathbf{X}_i - \widehat{\mathbf{X}}_i$\;
+
+    \tcp{Compute covariance matrices}
+    $\Sigma_{\mathbf{X}_i}$ = diag$(S_i, S_i')$ where $S_i = \Sigma_{\mathbf{x}_i}^{-1}$ and $S_i' = \Sigma_{\mathbf{x}_i'}^{-1}$\;
+
+    \tcp{Compute intermediate results}
+    U = $\sum_iA^\top_i\Sigma^{-1}_{\mathbf{X}_i}A_i$\;
+    V = diag$(V_1, \hdots, V_n)$ where $V_i = B^\top_i\Sigma^{-1}_{\mathbf{X}_i}B_i$\;
+    W = $\left [ W_1, W_2, \hdots, W_n \right]$ where $W_i = A^\top_i\Sigma^{-1}_{\mathbf{X}_i}B_i$\;
+    $\epsilon_A = \sum_iA^\top_i\Sigma^{-1}_{\mathbf{X}_i}\epsilon_i$\;
+    $\epsilon_B = (\epsilon^\top_{B_1}, \epsilon^\top_{B_2}, \hdots, \epsilon^\top_{B_n})^\top$ where $\epsilon_{B_i} = B^\top_i\Sigma^{-1}_{\mathbf{X}_i}\epsilon_i$\;
+    $Y_i = W_iV_i^{\ast-1}$\;
+  
+    \tcp{Augment U and V}
+    $U^\ast = U + \lambda I$\;
+    $V^\ast = V + \lambda I$\;
+
+    \tcp{Compute $\delta_A$ and $\delta_{B_i}$}
+    $\delta_A = (\epsilon_A - \sum_iY_i\epsilon_{B_i})(U^\ast - \sum_iY_iW_i^\top)^{-1} $\;
+    $\delta_{B_i} = V^{\ast-1}(\epsilon_{B_i} - W_i^\top \delta_A)$\; 
+
+    \tcp{Compute new parameter vector}
+     $A_{k+1} = A_k + \delta_A$\;
+     $B_{i, k+1} = B_{i, k} + \delta_{B_i}$\;
+
+    \tcp{Compute error}
+    $error_{k+1}$ = reprojectionError(A, B)\;
+
+    \If{$error_{k+1} < error_k$}{
+      Accept new parameters\;
+      Diminish $\lambda$ by a factor of 10\;
+    }
+    \Else{
+      Increase $\lambda$ by a factor of 10:
+    }
+  }
+ \caption{Complete description of the sparse Levenber-Marquard algorithm for minimizing reprojection error}
+\end{algorithm}
+
+\subsection{Stereo matching algorithm}
+
+These algorithms compute a disparity map from a pair of images. They also assume that images are rectified: epipolar lines are parallel to the x-axis. This constraint simplifies tremendously the computation of a disparity map since algorithms only have to compare pixels between each line of the  A disparity map is a black and white image where the intensity of each pixel indicates by how much pixels the left and right images differs. This means that objects near the cameras will appear brighter in the disparity map than farther objects. The disparity map must not be be confused with the depth map. Even though the depth map is computed from the disparity map, the later does not hold any information about distances.
+Stereo matching algoritms can be divided into two classes: local stereo matching and global stero matching. Global stero matching computes more accurate disparity maps than the former but they are considerably slower than local stereo matching algorithms and thus, they are not suitable for real-time applications.
+
+\subsubsection{Local Stereo matching}
+
+Local stereo matching operates on pixel level and compares then between left and right images. Most of these algorithms respect the left-right consistency constraint: a 3D point can only be projected once in the left and right image. Hence, a pixel from the left image can be associated with at most one pixel from the right image and vice versa. Not all pixels from one image can be associated with a pixel belonging to other pixel due to occlusions, or photometric distortions.
+To respect this constraint, most of algorithms use bidirectional matching: they start with associating each pixel from the left image with a pixel from the right image. The same operation is done this time associating pixels from the right image with pixels from the left image. Then, only matches that are coherent while matching from left to right and right to left are kept. Even though this approach handles well occlusions, it requires two matching phases. That is why, we will have a look at a fast stereo local stereo matching presented by L. Di Stefano, M. Marchionni, S. Mattoccia and G. Neri\cite{Stefano02afast}.
+This algorithm works in four steps:
+\begin{enumerate}
+  \item \textbf{Pre-Processing} This step aims at eliminating small distortions caused by the different properties of each camera used to capture images. The value of each pixel is substracted by the mean value of the intensities computed from a small window center on the pixel. Along the mean intensity, the variance is also computed to provide additional information in stage 3 to handle poorly textured areas.
+
+  \item \textbf{Basic Matching Core}
+The main novelty of this algorithm lies in the basic matching core. Instead of using bidirectional matching, it uses another one local algorithm called single matching phase (SMP). Let assume that pixel in left image at position $(x, y)$ is represented by $L(x, y)$. Similarly, $R(x, y)$ is the pixel at position $(x, y)$ in the right image. For $L(x-d_{max}, y)$, the algorithm evaluates an error function $\varepsilon$ on the interval $[R(x-d_{max}, y), \hdots, R(x,y)]$. This step is repeated for each pixel belonging to the same line. It may happen that two pixels $L(x+\alpha - d_{max}, y)$ and $L(x+\beta - d_{max}, y)$ with $\alpha \leq \beta$ are both associated with $R(x, y)$: this is a collision. The collision is avoided by retaining the pixel which has the highest score (least error).
+
+  \item \textbf{Reliable Tests}
+
+The previous stage is more error-prone than bidirectional matching, especially when dealing borders of objects. SMP assumes that the entire interval $[R(x-d_{max}, y), \hdots, R(x,y)]$ may contain a potential match for $L(x, y)$. However, this is wrong if this interval contains depth discontinuities. Hence, only a subset of the interval is valid. To overcome this issue, it uses the position of the three local minimums and the global minimum to compute $\delta d$:
+
+\begin{equation}
+  \delta d = \sum_{i=1}^{3} \mid d_i - d_{min} \mid 
+\end{equation}
+
+A low value of $\delta d$ means that the potential match is likely to be valid because these three local minimums are close from the global minimum. On the other hand, if $\delta d$ is too high, then it is considered as an ambiguous match. In this case, it performs an additional test: it checks how distinctive is the global minimum compared to the local minimums.
+
+\begin{equation}
+  \delta \varepsilon = \sum_{i=1}^{3} (\varepsilon_i - \varepsilon_{min}) 
+\end{equation}
+
+If the value $\frac{\delta \varepsilon}{\varepsilon_{min}}$ is high, then it means that the match is nonetheless correct because the global minimum is very distinctive from the rest. Otherwise, it discards the match.
+
+  \item \textbf{Sub-Pixel Measurement}
+
+The last step consists in refining the disparity up to $1/16$ of pixel by finding the minimum of a second degree curve using scores computed in stage 2 around the global minimum.
+\end{enumerate}
+
+\subsubsection{Semi-Global Stereo matching}
+
+
+
+\subsection{Feature point detection and matching}
+A solution to this project relies on three algorithms. A feature point detector generates a list of feature points from both images. Then, these points. Since the detection and matching of feature points are so dependent on each other, it is common than algorithms handle these two cases together: first, they present a feature point detector, then they describe an algorithm to match these points compared to a database. I considered algorithms which have an implementation in the OpenCV library.
+
+\subsubsection{Moravec}
+Feature point detection started by detecting corners. One the first corner detector was described by Moravec in 1980\cite{Moravec80} such that a seeing robot could move while avoiding obstacles. It works by detecting changes in intensity of a small window shifted in several directions. If there is at least one large changes in one direction, then the center of the window will be kept as a feature point. The shift $E$ around a point at $(x,y)$ can be computed from the following equation:
+
+\begin{equation}  
+  \label{eq:moravec}
+  E(x,y) = \sum_u \sum_v w(u, v) (I(x+u, y+v) - I(u,v))^2
+\end{equation}
+
+
+$w$ is either equal to the unity in a specified rectangular section and zero elsewhere. This algorithm has several drawbacks. First of all, it considers only a small set of directions. It does not take into account that pixels are rectangular due to the definition of $w$ and reacts too much on edges. Indeed, consider a white line over a black background, using this algorithm most points on the line have huge variations with surrounding points except in two directions. Hence, it will probably consider most points belonging to this line as good candidates for feature points.
+
+\subsubsection{Harris detector}
+Eight years later, Harris and Stephens published a paper\cite{Harris88} about a new feature point detector that detects corners and edges in order to address some weaknesses of the previous algorithm by changing  equation \ref{eq:moravec}. First of all, $w$ is now defined using a gaussian:
+
+\[
+  w(u, v) = e^{-\frac{u^2+v^2}{2\sigma^2}}
+\]
+
+This means that a smooth circular window is used instead of a rectangular one.
+Then, $I(u+x, v+y)$ is approximate to $I(u+v) + \frac{\partial I}{\partial x} + \frac{\partial I}{\partial y}$. $E(x, y)$ becomes:
+
+\[
+E(x, y) \approx \sum_u \sum_v w(u, v) \left ( \frac{\partial I}{\partial x}(u, v)x + \frac{\partial I}{\partial y}(u, v)y \right ) ^2
+\]
+
+We can now rewrite $E$ in matrix form:
+
+\[
+E(x,y) \approx (x,y) M  \begin{pmatrix}x\\y\end{pmatrix}
+\]
+
+where M is defined as:
+
+\[
+  M =  \sum_u \sum_v w(u, v) \left [ \begin{matrix} \frac{\partial^2 I}{\partial^2 x} & \frac{\partial I}{\partial x} \frac{\partial I}{\partial y} \\ \frac{\partial I}{\partial x} \frac{\partial I}{\partial y} & \frac{\partial^2 I}{\partial^2 y} \end{matrix} \right ]
+\]
+
+The eigeinvalues $\alpha$ and $\beta$ of the matrix M are computed. Ideally, an edge is detected is one of these values is zero and the other one is large. Because of noise, pixellation and intensity encoding (probably limited to one byte in monochrome images), it is very unlikely to happen that one eigenvalue is zero, more often one eigenvalue is large and the other one is small. In case of a corner, both eigenvalues are large. If both eigenvalues are small, then this is a flat region. This algorithm depends on a threshold to determine whether eigenvalues are small or large. One drawback of this algorithm is that it is not scale-invariant.
+\subsubsection{Good features to track}
+There are other situations where early algorithms failed to detect good feature points. For instance, small reflections on a glossy surface or a corner created by two objects at different depths may be picked as a good feature point using \textit{cornerHarris}. To detect and remove these bad feature points, Jianbo Shi and Carlo Tomasi developped an algorithm\cite{Shi94} which works on a sequence of images. Instead of applying they algorithm to only one image, they apply it to a sequence. First, they apply a feature detector to the first image. This gives a list of candidate feature points. Then, for each of those, it computes the dissimilarity between the first image and the rest of the images in order. If this dissimilarity function does not increase, then the feature point associated with is probably a good feature point (a corner of a real 3d object). Otherwise, it is discarded.
+
+\subsubsection{FAST detector}
+
+To improve the speed of these feature detectors, the FAST\cite{Fast06} algorithm works in three stages. 
+
+\paragraph{Segment test detector}
+First, it performs a quick test to detect if this candidate is likely to be a corner. Up to sixteen pixels, belonging to a circle whose candidate corner is the center, are used for this test. It uses only pixel 1, 5, 9 and 13. If at least three of them match this criteria: $I < I_p - t$ or $I > I_p + t$, then it checks against the remaining 12 pixels. At this stage, if n pixels (out of 16) follow the previous criteria, another test will be performed for this candidate corner. During the quality testing of this algorithm, best results were found for $n = 9$. This test has several drawbacks, notably it does not eliminate adjacent corners. Hence a final stage is needed to remove them.
+
+\paragraph{Learned detector}
+The second stage was built using machine learning. For each candidate corner found by the first stage, 
+
+\begin{enumerate}
+	\item It compares each pixel $x$ belonging to the circle to all other pixels. This creates three sets $S_s$, $S_d$ and $S_b$.
+	\item It computes the entropy of each set. $H(P) = (c + \bar{c})\log_2{c + \bar{c}} + c\log_2{c} + \bar{c}\log_2{\bar{c}}$
+	\item For each $x$, it selects $x$ which has the most information gain $H(P) - H(P_s) - H(P_d) - H(P_d)$
+	\item It repeats this algorithm but using $S_s$, $S_d$ and $S_b$ instead of the set S.
+\end{enumerate}
+
+This function is garanteed to terminate and a decision tree can be induced from it. This decision tree is then transformed into C code and compiled.
+
+\paragraph{Non-maximal suppression}
+In the end, it computes a score for each detected corner to eliminate those adjacent to a better corner.
+\[
+V = max \left(\sum_{x \in S_{bright}}{\abs{I_{p \rightarrow x} - I_p} - t},  \sum_{x \in S_{dark}}{\abs{I_p - I_{p \rightarrow x}} - t} \right)
+\]
+with,
+\[
+	x \in S_{bright} \Leftrightarrow  I_{p \rightarrow x} \geq I_p + t
+\]
+\[
+	x \in S_{bright} \Leftrightarrow  I_{p \rightarrow x} \leq I_p + t
+\]
+
+The performance improvement is significant: about thirty times faster on a Pentium III 850MHz over the Harris detector.
+
+\subsubsection{SURF}
+
+SURF\cite{Surf06} is a feature detector that associate each feature with a descriptor to allow feature matching across different images. The descriptor is scale-invariant as well as rotation invariant. This means that despite having different size or orientations, similar features can be matched.
+
+\paragraph{Feature point detection}
+
+ For each pixel in the image, a hessian matrix $H$ is built: 
+\[
+  H(\mathbf{x}, \sigma) =
+  \left [
+  \begin{matrix}
+    L_{xx}(\mathbf{x}, \sigma) & L_{xy}(\mathbf{x}, \sigma) \\
+    L_{xy}(\mathbf{x}, \sigma) & L_{yy}(\mathbf{x}, \sigma)
+  \end{matrix}
+  \right ]
+\]
+
+where $L_{xx}(\mathbf{x}, \sigma)$ is the gaussian second order derivative, i.e. $\frac{\partial^2 g(\sigma)}{\partial^2 x}$. The derivative is approximate using a box filter $D$ to reduce computation time.  The determinant of the hessian matrix $H$ is then approximated to:
+
+\[
+det(H) \approx D_{xx}D_{yy} - (0.9D_{xy})^2
+\]
+
+If $det(H)$ is greater than a threshold, then the point is kept as a feature point.
+To achieve scale invariance, the previous step is performed several times not by scaling down the image as in SIFT\cite{Sift04} but instead scaling up the box filter. The size, in pixel, of each box filter are : $9\times9$, $15\times15$, $21\times21$ and $27\times27$.  Also, the parameter needs to be adjusted accordingly to the size of the box filter. $\sigma$ is equal to 1.2 for box filter of size $9\times9$, 3.6 for size $27\times27$, etc. After this step, a threshold is used to keep control on the number of feature detectors. Finally, A non-maximum suppression is applied in a 3x3x3 neighbourhood. The coordinates of this neighbourhood are x, y, and s (the scale factor of the box filter).
+
+\paragraph{Feature point descriptor}
+
+The SURF descriptor is a simplified variant of the SIFT descriptor. First, the orientation of the feature point is determined. The Haar-Wavelet respond is computed in the $x$ and $y$ directions in a circular neighbourhood of size $6s$. The wavelets are weighted with a gaussian ($\sigma = 2.5s$) centered on the feature point. Each wavelet is plotted on a graph where the abscissa is the horizontal response and the ordenate is the vertical response. The sum of all responses within a sliding window covering an angle of $\frac{\pi}{3}$ is computed. The sum yields a vector, and the longest vector indicates the dominant orientation of the feature point. 
+
+The feature descriptor is computed from a square region of size $20s$ oriented along the orientation computed previously. This region is split into smaller sub-region of size $4\times4$ and the Haar Wavelet response, $dx$ and $dy$, is computed at  $5\times5$ regularly space point in the horizontal and vertical direction. $dx$ and $dy$ are weighted using a gaussian ($\sigma=3.3s$) to increase the robustness of the descriptor towards geometric deformation and localisation errors. Each sub-region is described by the vector $v$:
+
+\[
+v = (\sum{dx}, \sum{dy}, \sum{\abs{dx}}, \sum{\abs{dy}})
+\]
+
+The vector $v$ is normalized to achieve invariance to contrast. The complete SURF descriptor is a set of 16 vectors $v$.
+
+\subsubsection{ORB}
+
+ORB\cite{Orb11} is a mix of FAST, SIFT and BRIEF to create a more robust and faster feature point detector and descriptor. Let $N$ be the number of feature points to be detected. Using a low enough threshold, more than $N$ feature points are detected using FAST-9 (circular radius of 9 pixels). For each feature point, the Harris corner measure (sum of $\alpha$ and $\beta$) is computed to order the set of feature points. The best $N$ feature points are kept. Like SURF, it employs this technique over a scale pyramid to achieve scale invariance.
+
+The orientation of the feature point is based on the assumption that the feature point $O$ is shifted from the intensity centroid $C$. The moment of a patch is defined as:
+
+\begin{equation}
+  \label{orb:moments}
+  m_{p,q} = \sum_{x,y} x^py^q I(x,y)
+\end{equation}
+
+From \ref{orb:moments}, the centroid $C$ can be computed as :
+
+\[
+  C = \left ( \frac{m_{10}}{m_{00}}, \frac{m_{01}}{m_{00}} \right )
+\]
+
+Using the four quadrant inverse arctangent, the orientation $\theta$ of the vector $\overrightarrow{OC}$ is:
+
+\[
+  \theta = \text{atan2}(m_{01}, m_{10})
+\]
+
+ORB feature descriptor is based on the BRIEF feature descriptor \cite{Brief10}. The descriptor is a bitstring describing the results of a set of binary intensity tests. Let assume a smooth patch of size $5\times 5$ centered on points $\mathbf{x}$ and $\mathbf{y}$. A binary test $\tau$ is defined as:
+
+\[
+  \tau (\mathbf{p}, \mathbf{x}, \mathbf{y}) =   
+\left \{
+  \begin{array}{l l}
+    1 & \mathbf{p}(\mathbf{x}) < \mathbf{p}(\mathbf{y}) \\
+    0 & \mathbf{p}(\mathbf{x}) \geq \mathbf{p}(\mathbf{y}) \\
+  \end{array}
+  \right .
+\]
+
+where $\textbf{p}$ is the intensity of the patch. The feature descriptor $f$ is:
+
+\[
+  f_n(\mathbf{p}) = \sum_{1 \leq i \leq n}  2^{i-1} \tau(\mathbf{p}, \mathbf{x}, \mathbf{y})
+\]
+
+Like BRIEF, ORB has a feature decriptor of length equal to 256 ($n=256$). Hence there are $n$ binary tests comparing a $n$ pair of patches at location $\mathbf{x}_i$ and $\mathbf{y}_i$. This defines a $2\times n$ matrix:
+
+\[
+\mathbf{S} = 
+\left ( \begin{matrix} 
+\mathbf{x}_1 & \hdots & \mathbf{x}_n \\
+\mathbf{y}_1 & \hdots & \mathbf{y}_n \\
+\end{matrix} \right )
+\]
+
+The novelty of ORB lies in transforming the matrix $S$ with the orientation $\theta$ computed earlier. A new matrix $S_\theta$ is defined as:
+
+\[
+  S_\theta = R(\theta)S
+\]
+
+The feature descriptor becomes:
+
+\[
+  g_n(\mathbf{p}, \theta) = f_n(\mathbf{p}) \mid (\mathbf{x}_i, \mathbf{y}_i) \in S_\theta
+\]
+
+This feature descriptor has lower variance among bits than BRIEF because BRIEF assumes a random orientation among all feature points. High variance among the feature descriptor is needed because it makes the feature more unique and less mismatch will occur during feature point matching. One simple solution would consist in increasing the size of the feature descriptor but it would have a performance impact on the algorithm. Another solution consists in identifying 256 pairs of locations from a bigger patch that are not correlated. Using a training set of some 300k keypoints, all possible binary tests from a $31\times 31$ pixel patch are considered. Each test is a pair of $5\times 5$ subregions of the patch. This means that there are 205590 possible tests for each keypoint. After running each test, they are ordered according to their distance to a mean of 0.5 to form a vector $T$. Then, a greedy search is performed on T to build a result vector R.
+
+\begin{algorithm}[H]
+  \KwIn{Vector T}
+  \KwOut{Vector R}
+
+  Insert the first test from T in R and remove it from T\;
+
+  \While{R has less than 256 entries}{
+    Take the first entry from T and compare it against all entries of R\;
+    \eIf{correlation > threshold} {
+       discard test\;
+    }{
+      add to R\;
+    }
+    Increase threshold\;
+  }
+\end{algorithm}
+
+This method of selecting locations proved to be significantly better than the simple version using $S_\theta$: matching was much more independent of the orientation of the feature points.
+
+\section{Project}
+\subsection{Data acquisition}
+
+Although it might seem as the easiest step of this project, this has to be done carefully because it has a huge impact on the quality of the results. In other words, algorithms used later cannot handle every situations so we need to capture images that respect many constraints. 
+
+\subsubsection{Hardware}
+
+I have a pair of Unibrain Fire-I cameras\footnote{Specifications availabe at: http://www.unibrain.com/products/fire-i-digital-camera/\#detailsTab} provided by my tutor. These cameras can capture 640x480 images at up to 60 frames per second. They use a FireWire interface. Parameters can be set using Coriander, a software tool for configuring cameras, such as exposure time, gain, gamma... I also have a 10 meters long FireWire cable and two smaller ones (less than 50 centimeters long) to connect everything. I have a FireWire switch, also provided by my tutor. This switch is very useful because I can use the two small cables to connect the cameras to the switch, and the switch is connected to a computer using the long cable. Hence, I can set the cameras far away from the computer. This is important for outdoors scene because I used a desktop computer with a PCI FireWire card inside.
+\begin{figure}[h]
+    \begin{center}
+        \includegraphics[scale=0.2]{images/setup.png} 
+        \label{fig:hardware-schema}
+        \caption{Hardware schema}
+    \end{center}
+\end{figure}
+
+I built a small structure using Mecchano and a flexible plate such that the left camera is still, 12 centimers above the ground, while the right camera can move up and down 5 to 12 centimers above the ground. I can precisely lock the plate at several positions and I can move the plate up and down. To attach the left camera to the plate, I fixed an old part of Mecchano on the plate using a technique called brazing with silver alloy. It appeared that I could not solder newest Mecchano parts on the plate probably because of a change in the composition of the parts which is not compatible with my alloy. Instead, I used a glue gun but it was not effective as the previous solution. I had to reglue some parts several times. Fortunately, the plate was still flexible after making these changes.
+
+\begin{figure}[h]
+    \begin{center}
+        \includegraphics[scale=0.3]{images/attachleft.png} 
+        \label{fig:attach-left}
+        \caption{Back of left camera attached to the plate}
+    \end{center}
+\end{figure}
+
+When both cameras are attached to the plate, the plate bends in the range 2-10 degrees.
+
+\subsubsection{Camera calibration}
+
+First of all, I calibrated each camera to obtain the camera calibration matrix and distortion coefficients. This step cannot be avoided because the cameras have a fish-eye lens which causes huge distortion on the images.
+I ran a software based on the example provided by the OpenCV tutorials\footnote{http://docs.opencv.org/doc/tutorials/calib3d/camera\_calibration/camera\_calibration.html}. Every tenth of a second, the software is looking for a chessboard in the current image. If it finds it, it will extract points from the images. This step must to be done at least ten times to provide good results. A higher number of points will help getting good results and I did it 25 times. From a set of points, I use functions provided by the OpenCV library to compute the camera calibration matrix and distortion coefficients. This allows to undistort images, which simplifies computations of the fundamental matrix. The effect of undistortion is shown in figure~\ref{fig:distorted-undistorted}.
+
+\begin{figure}[htbp]
+    \begin{minipage}[c]{.4\linewidth}
+        \begin{center}
+            \includegraphics[scale=.3]{images/distorted.png}
+        \end{center}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[c]{.4\linewidth}
+        \begin{center}
+            \includegraphics[scale=.3]{images/undistorted.png}
+        \end{center}
+    \end{minipage}
+    \caption{Distorted and Undistorted images}
+    \label{fig:distorted-undistorted}
+\end{figure}
+
+Notice how corners of the distorted images are not appearing in the undistorted image. This allows some flexibility while capturing images (e.g. one corner of the image can be saturated or too dark without having any effects on the results).
+
+
+\subsubsection{Model computation}
+
+To take into account the defomation of the plate later in the computation of the fundamental matrix, we need to understand how the right camera moves relative to the left camera. The computation of each model depends on the Mecchano structure. I made a first structure and then I did some slight modifications later. So I need to compute two models, one for each structure. Each model describes how the $x$ and $z$ components of the translation vector varies according to the angle $\theta$ of the right camera. In other words, a model is a pair of functions $f_x(\theta)$ and $f_z(\theta)$.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.4]{images/modeltheta.png} 
+        \label{fig:theta}
+        \caption{Angle $\theta$}
+    \end{center}
+\end{figure}
+
+\paragraph{Old model}
+
+Before acquiring some data, I set the right camera at different angles and captured many points correspondences to compute the fundamental matrix. I did this five times so I can compute five fundamental matrices. From each fundamental matrix $F_i$, I extract the translation vector $T_i = (x_i, y_i, z_i)^\top$ and compute the angle $\theta_i$:
+
+\begin{equation}
+  \label{eq:theta}
+  \theta_i = \text{atan2}(z, x)
+\end{equation}
+
+I use a second order polynomial to approximate $f_x(\theta)$. So $f_x(\theta) = a\theta^2 + b\theta + c$ for some real a, b and c.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.4]{images/oldmodelX.png} 
+        \label{fig:oldmodelX}
+        \caption{Approximation of $f_x(\theta)$}
+    \end{center}
+\end{figure}
+
+To approximate $f_z(\theta)$, I use a linear approximation:
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.4]{images/oldmodelZ.png} 
+        \label{fig:oldmodelZ}
+        \caption{Approximation of $f_z(\theta)$}
+    \end{center}
+\end{figure}
+
+Notice how $f_z(\theta)$ is very close to the identity function. 
+
+Since I cannot rebuild exactly this structure, I am forced to use only five points to approximate $f_x(\theta)$ and $f_z(\theta)$. This means that approximations are not precise because of a lack of data.
+
+\paragraph{New model}
+
+I chose a different method to acquire data to compute a model. I placed my smartphone parallel to the cameras, approximately 30 centimeters from them. I took a video while I was bending the plate. For every other frame of the video, I clicked on the same feature of the right camera: a black dot above the lens. Since the left camera did not move during the video, I clicked only once on the black dot. This step gave me 238 positions (in pixel coordinates) of the right camera and the position (also in pixel coordinates) of the left camera. I computed many translation vectors $(x, z)^\top$ from the left camera to the right camera. Using equation \ref{eq:theta}, I was able to generate much more data than for the old model.
+
+Similarly to the previous model, I chose a quadratic approximation for $f_x(\theta)$ and a linear one for $f_z(\theta)$.
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.4]{images/newmodelX.png} 
+        \label{fig:newmodelX}
+        \caption{Approximation of $f_x(\theta)$}
+    \end{center}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.4]{images/newmodelZ.png} 
+        \label{fig:newmodelZ}
+        \caption{Approximation of $f_z(\theta)$}
+    \end{center}
+\end{figure}
+
+As expected, the precision of this model is much higher than the previous one due to the high number of points.
+
+\subsubsection{Capturing images}
+
+Finding an appropriate scene is crucial for the quality of the results. Many constraints are imposed by hardware and algorithms:
+\begin{itemize}
+    \item Cameras
+    \item Length of the longest FireWire cable
+    \item Use of a desktop computer
+    \item Feature point detector
+    \item Feature point matching
+    \item Use of RANSAC algorithm for finding the fundamental matrix
+    \item Stereo algorithms
+\end{itemize}
+
+\paragraph{Cameras}: The cameras cannot handle high constrast in the image. For outdoors scene, this is a major problem because there is often a lot of contrast between objects directly lit by the sun and shadows. Hence, some parts such as the sky or reflective surface are too saturated. 
+\paragraph{FireWire cable}: I cannot set my cameras far away from the computer. This was also a huge trouble because I had to move temporarily the desktop computer to the bedroom of my flatmate to access a small garden each time I wanted to capture scene outdoors.
+\paragraph{Desktop computer}: Using a desktop computer means that I need a power supply. It also means that it is quite time consuming to install everything.
+\paragraph{Feature point detector}: Feature point detectors work well if they are a lot of corners in the image. Plain surfaces such as a white wall lead to poor results.
+\paragraph{Feature point matching}: Every features detected must be as unique as possible to avoid any mismatch. Since, all algorithms work on set of points correspondence. It is vital that the number of mismatch stay very low (less than 5\%). It means that there must not be any repetitive patterns such as a brick wall or foliages in the scene.
+\paragraph{Stereo algorithms}: Stereo algorithms imposes constraints on the lighting of the scene. Since they often work by comparing pixels from both images, there must be as few shadows as possible. Plain surfaces must also be avoided. Also, the use of artificial lighting must be avoided because it makes sharp shadows. Taking images in daylight is better because shadows are softened.
+
+\subsubsection{Capturing images}
+
+I implemented a small software which captures frames at 60 frames per second from both cameras and can provide several options such as. Unfortunately, I was not able to configure cameras to ensure that both capture frames exactly at the same time. Actually, the delay is negligible.
+
+
+\paragraph{Scene 1: Garden - Wall}
+\paragraph{Scene 2: Garden - }
+\paragraph{Scene 3: Garden - }
+At the beginning, I started capturing images in a small garden because there would be a few meters between cameras and any other objects. Here are some images:
+
+\paragraph{Scene 5: Shelves}
+
+Finally, I tried to reproduce the scene tsukuba, two tests images used for testing the quality of disparity map produced by stereo algorithms. I chosed to capture two shelves full of books, comic strips and cd cases. Corner of these objects are very good candidate for feature points and feature matching works well. I payed attention about lighting to minimize shadows below the shelves and I also had to adjust the amount of light in the room such that I did not need to change the default exposure time.
+
+Given all these constraints, here are some images:
+
+These images respect most contrainsts decribed above. However, here are some troubles in descending importance order:
+\begin{enumerate}
+    \item Most points lie on the smame plane. This is the worst situation for RANSAC because it will often finds invalid solutions.
+    \item I forgot to diminish the exposure time of the cameras. When the right camera is moving, it often captures blurry images. For this reason, about one quarted of some data sets are unusable.
+    \item There are still some shadows below the shelf.
+    \item For one data set, I forgot to place an object in front of the shelves.
+    \item Most feature points are localized in the center of the image.
+\end{enumerate}
+
+\subsection{Software}
+
+\subsubsection{Initial guess with RANSAC}
+\subsubsection{RANSAC (opencv)}
+\subsubsection{QDEGSAC}
+\subsubsection{RANSAC (opengv)}
+\subsection{Using model}
+\subsubsection{Image rectification}
+\subsubsection{Disparity map and depth map computation}
+
+\clearpage
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}
+
