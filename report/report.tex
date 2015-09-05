@@ -1608,6 +1608,17 @@ speckleRange & 0 \\
 
 The output is a $640\times480$ matrix storing disparities as 16-bit signed integer. A value of $-1$ indicates that the algorithm could not find a disparity value. To preview the disparity map, I stored it on disk as a grey-scale image by normalising it using a linear min-max method.
 
+\begin{figure}[H]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[scale=0.2]{images/disparity_0.png} &
+    \includegraphics[scale=0.2]{images/disparity_1.png} \\
+    \includegraphics[scale=0.2]{images/disparity_2.png} &
+    \includegraphics[scale=0.2]{images/disparity_3.png}
+    \end{tabular}
+    \caption{First four disparities obtained using RANSAC (opengv) and the dataset shelves.}
+\end{figure}
+
 \subsection{Depth map}
 The depth map is computed from the disparity map using the following equation:
 \begin{equation}
