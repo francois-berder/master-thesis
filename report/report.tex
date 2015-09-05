@@ -1111,24 +1111,6 @@ I ran a software based on the example provided by the OpenCV tutorials\footnote{
 
 Notice how corners of the distorted images are not appearing in the undistorted image. This allows some flexibility while capturing images (e.g. one corner of the image can be saturated or too dark without having any effects on the results).
 
-To check the focal length estimated by OpenCV, I compute the theoretical value of the focal length using the specifications of the lens.
-\begin{equation}
-focal\_length\_pixels = focal\_length\_mm \times size\_pixels\_mm
-\label{eq:focallength}
-\end{equation}
-
-Using \ref{eq:focallength}, I found a value of 768 for the focal length. This is twice more than what OpenCV computes. I decided to use the theoretical value rather than the estimated value of the focal length otherwise I would not be able to compute the right scale later in the project. In the end, the camera matrix for both cameras is :
-\[
-  K_l = K_r = 
-\left (
-\begin{matrix}
-  768 & 0 & 319.5 \\
-  0 & 768 & 219.5 \\
-  0 & 0 & 1 \\
-\end{matrix}
-\right )
-\]
-
 \subsection{Constraints when capturing images}
 
 The quality of the results depends a lot on the input because each piece of hardware and each algorithm have some constraints. Hence, it is necessary to choose a scene with care because it will have a lot of impact later. 
@@ -1668,123 +1650,39 @@ The result of the triangulation is a list of 3D points. As expected, they all li
 
 \chapter{Evaluation}
 
-The evaluation is split into two parts. First, we compare different versions of RANSAC. Then, we evaluate the performance of the model using the best performing RANSAC algorithm.
-
-\section{Comparing RANSAC}
-
-I compare the following algorithms:
-
-\begin{enumerate}
-  \item RANSAC based on OpenCV RANSAC with modified threshold (RANSAC-t)
-  \item RANSAC based on OpenCV RANSAC with modified distance (RANSAC-d)
-  \item OpenGV RANSAC
-\end{enumerate}
-
-I chose not to include QDEGSAC in the comparison because the percentage of non-degenerate solutions is too low compared to other algorithms. 
-
-Using the shelves dataset, I ran the full program on the first quarter of the dataset (50 images). To compute the reprojection error of each solution, I was originally using the Optimal triangulation method but switched to Linear eigen triangulation. Hence, the precision of the reprojection error is less precise than what I could compute. On the other hand, it is about ten times faster. After RANSAC, I also use the gold standard method to minimise the reprojection error.
-
-\begin{figure}[H]
-  \includegraphics[scale=.4]{images/error-ransac.png}
-  \caption{Reprojection error of different RANSAC algorithms}
-\end{figure}
-
-From this figure, it is hard to distinguish which one is better. Even though RANSAC-opengv seems to perform worse than the other two, the reprojection error can be very low because of a quasi-degenerate solution which would then favor RANSAC-d and RANSAC-t.
-Another way to compare algorithms is to use disparity maps because they depend on the precision of the fundamental matrix.
-Ideally, disparity maps should be as smooth as possible and not be too deformed. In the worst case, disparity maps are completely back because the image rectification failed (i.e. producing a pair of two black images). The following grid of images show the first twenty disparity maps computed using the shelves dataset and the three different algorithms in this order: RANSAC-t, RANSAC-d, RANSAC-opengv.
-
-\begin{figure}[H]
-  \centering
-  \begin{tabular}{ccc}
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_0.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_0.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_0.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_1.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_1.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_1.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_2.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_2.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_2.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_3.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_3.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_3.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_4.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_4.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_4.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_5.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_5.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_5.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_6.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_6.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_6.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_7.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_7.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_7.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_8.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_8.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_8.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_9.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_9.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_9.png} \\
-  \end{tabular}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \begin{tabular}{ccc}
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_10.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_10.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_10.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_11.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_11.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_11.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_12.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_12.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_12.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_13.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_13.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_13.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_14.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_14.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_14.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_15.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_15.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_15.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_16.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_16.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_16.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_17.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_17.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_17.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_18.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_18.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_18.png} \\
-    \includegraphics[scale=0.1]{images/disparity-opencv-t/disparity_19.png} &
-    \includegraphics[scale=0.1]{images/disparity-opencv-d/disparity_19.png} &
-    \includegraphics[scale=0.1]{images/disparity-opengv/disparity_19.png} \\
-  \end{tabular}
-\end{figure}
-
-From these disparity maps, RANSAC-OpenGV performs better than other algorithms. This confirms that RANSAC-d and RANSAC-t often selects a quasi-degenerate solution which causes the image rectification step to fail. This explains why there are so many black images in the first two columns.
-
 \section{Model efficiency}
 
-To find out if the model is actually useful (i.e. reduce the reprojection error), we run the program on the entire dataset shelves. We use RANSAC(OpenGV) to obtain a first approximation of the fundamental matrix. Then, the gold standard method tries to minimise the reprojection error. This gives a first output. A second output is computed using the same fundamental matrix computed in step one. This time, we use our model to rectify the fundamental matrix and finally we use the gold standard method. The following figure sums it up:
-\begin{figure}[H]
-  \centering
-  \includegraphics[scale=0.45]{images/model-program.png}
-  \caption{Program steps}
-\end{figure}
-
-The reprojection error is again computed using the linear eigen triangulation.
+We seek to find out if using a model reduces the reprojection error compared to RANSAC. We assume that the orientation of the right camera is already kwown and is given to the model which computes the translation vector. There are three models to compare: linear, quadratic, and a mixed approach. The last model computes the x component of the translation vector using the quadratic approximation and the y component is computed from the linear approximation. Using the dataset shelves, we compute for each entry of this dataset four different fundamental matrices, with and without model, and compute their respective reprojection error.
 
 \begin{figure}[H]
-  \centering
-  \includegraphics[scale=0.5]{images/error-model-ransac.png}
-  \caption{Comparing RANSAC and RANSAC + model.}
+    \centering
+    \includegraphics[scale=0.5]{images/error-model.png}
+    \caption{Comparison of reprojection error using the shelves dataset}
+    \label{fig:error-model}
 \end{figure}
 
-Unfortunately, using the model to rectify the fundamental matrix made results worse than without. There are several explanations to it. The first one is that I used a model computed from a different setup than the one I used to capture the dataset shelves. However, both structures are very similar. Secondly, I found out very late that the camera matrix of the left camera was slightly incorrect. This has an impact on the accuracy of the approximation computed by RANSAC: the position of the right camera, the translation vector, is not consistent with the reality.
+From figure \ref{fig:error-model}, it is clear that all models perform similarly to RANSAC at best.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+& RANSAC & linear model & quadratic model & mixed model \\
+\hline
+average error & 2.661 & 4.124 & 3.989 & 3.934 \\
+\hline
+standard deviation & 2.838 & 5.443 & 5.207 & 5.008 \\
+\hline
+min error & 0.637 & 0.659 & 0.659 & 0.659 \\
+\hline
+max error & 26.988 & 34.883 & 33.990 & 33.687 \\
+\hline
+\end{tabular}
+\caption{Comparison of RANSAC and models}
+\end{figure}
+
+The mixed model is the best model and should be preferred over the linear and quadratic one. Unfortunately, even the mixed model cannot beat RANSAC.
+
 
 \chapter*{Conclusion}
 \label{chap:Conclusion}
@@ -1793,7 +1691,8 @@ First of all, I would like to point out that I did not have any knowledge about 
 \\
 On the positive side, I learned a lot and I have now a working experience with a new subject of computer science. Also, I did not rely solely on libraries and I wrote my own implementations, even if it was not strictly needed, of various algorithms to discover their subtleties. Aside from programming, building a structure for the cameras and dealing with data from the real world kept me motivated.
 \\
-Future improvements should focus at improving the model. Finally, it would be even better to integrate this project into a larger one to make use of the output of this project, the depth map, to solve real problems.
+Beyond stereo vision, models developped during this project could be used to compute cheaply the transformation at each frame. In the hobbyist world, 8-bit microprocessor are still in widespread use due to their PDIP package, which is easy to solder. On top of it, gyrometers are now affordable and easy to interface with these microprocessors (typically through an I2C bus). So the rotation matrix can be computed and thus the translation vector with the model.
+
 
 \clearpage
 \bibliographystyle{plain}
