@@ -233,7 +233,7 @@ std::tuple<Matrix3d, Vector3d> Worker::applyRANSACfromOpenGV(cv::Mat &leftFrame,
     else if(algoName == "eightpt")
         algo = sac_problems::relative_pose::CentralRelativePoseSacProblem::EIGHTPT;
 
-    boost::shared_ptr<sac_problems::relative_pose::CentralRelativePoseSacProblem>
+    std::shared_ptr<sac_problems::relative_pose::CentralRelativePoseSacProblem>
     relposeproblem_ptr(new sac_problems::relative_pose::CentralRelativePoseSacProblem(
                        adapter,
                        algo));

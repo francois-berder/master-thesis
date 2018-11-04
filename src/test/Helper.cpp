@@ -87,7 +87,7 @@ transformation_t Helper::estimateTransformation(std::vector<std::pair<Eigen::Vec
 
     relative_pose::CentralRelativeAdapter adapter(xls, xrs);
 
-    boost::shared_ptr<sac_problems::relative_pose::CentralRelativePoseSacProblem>
+    std::shared_ptr<sac_problems::relative_pose::CentralRelativePoseSacProblem>
         relposeproblem_ptr(
         new sac_problems::relative_pose::CentralRelativePoseSacProblem(
         adapter,
