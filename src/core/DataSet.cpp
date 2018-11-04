@@ -47,7 +47,7 @@ void DataSet::load(const std::string &folder, CameraParameters &params, const in
 	        rightFiles.push_back(line);
         startLoop: std::getline(file, line);
     }while(line != "</images>");
-    
+
     std::sort(leftFiles.begin(), leftFiles.end(), compareStr);
     std::sort(rightFiles.begin(), rightFiles.end(), compareStr);
     unsigned int n = std::min(leftFiles.size(), rightFiles.size());

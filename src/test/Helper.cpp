@@ -75,7 +75,7 @@ transformation_t Helper::estimateTransformation(std::vector<std::pair<Eigen::Vec
 
         Vector3d xl(leftPoint(0), leftPoint(1), 1.);
         Vector3d xr(rightPoint(0), rightPoint(1), 1.);
-        
+
         xl = cameraMatrix.inverse() * xl;
         xr = cameraMatrix.inverse() * xr;
         xl /= xl.norm();

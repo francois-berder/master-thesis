@@ -220,7 +220,7 @@ std::tuple<Matrix3d, Vector3d> Worker::applyRANSACfromOpenGV(cv::Mat &leftFrame,
     }
 
     relative_pose::CentralRelativeAdapter adapter(xls, xrs);
-    
+
     sac::Ransac<sac_problems::relative_pose::CentralRelativePoseSacProblem> ransac;
 
     opengv::sac_problems::relative_pose::CentralRelativePoseSacProblem::Algorithm algo;
@@ -341,7 +341,7 @@ std::tuple<Mat, Mat, Matrix3d, Matrix3d> Worker::alignFrames(const int workID, M
 
 Mat Worker::computeDisparityMap(const int workID, Mat &leftAligned, Mat &rightAligned)
 {
-    CvStereoBMState currentState =  
+    CvStereoBMState currentState =
     {
         CV_STEREO_BM_NORMALIZED_RESPONSE,
         5,
@@ -386,7 +386,7 @@ Mat Worker::computeDepthMap(const int workID, Matrix3d &rotation, Mat &disparity
 
     const double baseline = 122.4 * modelFS(angleZ);
 
-    // focal length computed from the camera specifications 
+    // focal length computed from the camera specifications
     // instead of using estimated focal length;
     const double focalLength = 768.;//m_leftCameraMatrix(0, 0);
 

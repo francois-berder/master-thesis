@@ -91,7 +91,7 @@ Matrix3d Alignment::computeR(Vector3d &epipole)
 	if(x < 0.)
 		x2 = -x2;
 	double angle1 = atan2(z, x);
-	double angle2 = atan2(1., x2); 
+	double angle2 = atan2(1., x2);
 	while(angle1 < 0.)
 		angle1 += 2 * M_PI;
 	while(angle2 < 0.)
@@ -130,7 +130,7 @@ Matrix3d Alignment::findLeftHomography(Matrix3d &rightHomography, Matrix3d &rota
 
     JacobiSVD<MatrixX3d> svd(A, ComputeFullU | ComputeFullV);
 	Vector3d x = svd.solve(b);
-    
+
 	Matrix3d Ha;
     Ha << x(0), x(1), x(2),
 		    0., 1., 0.,

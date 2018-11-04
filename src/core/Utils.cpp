@@ -11,7 +11,7 @@ Matrix3d importCVMatrix(Mat &m)
     m2 << m.at<double>(0,0), m.at<double>(0,1), m.at<double>(0,2),
         m.at<double>(1,0), m.at<double>(1,1), m.at<double>(1,2),
         m.at<double>(2,0), m.at<double>(2,1), m.at<double>(2,2);
-    
+
     return m2;
 }
 
@@ -105,7 +105,7 @@ std::tuple<Matrix3d, Vector3d> extractRotationTranslation(Matrix3d &F, Matrix3d 
     avgZ4 /= static_cast<double>(points3D4.size());
 
     if(avgZ1 > 0.)
-        return std::make_tuple(R1, T1);    
+        return std::make_tuple(R1, T1);
     else if(avgZ2 > 0.)
         return std::make_tuple(R2, T1);
     else if(avgZ3 > 0.)

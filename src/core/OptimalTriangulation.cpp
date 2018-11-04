@@ -31,7 +31,7 @@ double evaluateG(double t, double a, double b, double c, double d, double f, dou
     double tmp = atb*atb + g*g*ctd*ctd;
     tmp *= tmp;
     tmp *= t;
-    
+
     double tmp3 = (1. + f*f*t*t);
     tmp3 *= tmp3;
     double tmp2 = atb*ctd*tmp3*(a*d-b*c);
@@ -70,18 +70,18 @@ std::vector<double> findRealRoots(double a, double b, double c, double d, double
 
     double coeffs[7];
 
-    coeffs[0] = 
+    coeffs[0] =
         -a*b*d2
         +b2*c*d;
 
-    coeffs[1] = 
+    coeffs[1] =
         +d4*g4
         +2.*b2*d2*g2
         -a2*d2
         +b2*c2
         +b4;
 
-    coeffs[2] = 
+    coeffs[2] =
         +4.*c*d3*g4
         +4.*a*b*d2*g2
         +4.*b2*c*d*g2
@@ -92,7 +92,7 @@ std::vector<double> findRealRoots(double a, double b, double c, double d, double
         +4.*a*b3;
 
 
-    coeffs[3] = 
+    coeffs[3] =
         +6.*c2*d2*g4
         +2.*a2*d2*g2
         +8.*a*b*c*d*g2
@@ -101,7 +101,7 @@ std::vector<double> findRealRoots(double a, double b, double c, double d, double
         +2.*b2*c2*f2
         +6.*a2*b2;
 
-    coeffs[4] = 
+    coeffs[4] =
         +4.*c3*d*g4
         +4.*a2*c*d*g2
         +4.*a*b*c2*g2
@@ -111,14 +111,14 @@ std::vector<double> findRealRoots(double a, double b, double c, double d, double
         +2.*a*b*c2*f2
         +4.*a3*b;
 
-    coeffs[5] = 
+    coeffs[5] =
         +c4*g4
         +2*a2*c2*g2
         -a2*d2*f4
         +b2*c2*f4
         +a4;
 
-    coeffs[6] = 
+    coeffs[6] =
         -a2*c*d*f4
         +a*b*c2*f4;
 
