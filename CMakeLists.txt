@@ -1,13 +1,15 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 #Configuration du projet
 project(meng_project)
 
-find_package(OpenCV 2.4.12 EXACT REQUIRED)
+find_package(OpenCV 2.4 REQUIRED)
+find_package (Eigen3 REQUIRED NO_MODULE)
+find_package(opengv REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -ggdb3 -Wall")
+set(CMAKE_CXX_FLAGS "-std=c++11 -ggdb3 -Wall -I/usr/include/eigen3")
 
 add_subdirectory(src/core)
 
@@ -40,7 +42,7 @@ src/model.cpp
 )
 
 add_executable(
-test
+run_test
 ${source_files_test}
 $<TARGET_OBJECTS:core>
 )
@@ -61,7 +63,7 @@ ${OpenCV_LIBS}
 )
 
 target_link_libraries(
-test
+run_test
 ${OpenCV_LIBS}
 opengv
 gsl
