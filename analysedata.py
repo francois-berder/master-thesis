@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     modelFile = open("results/error", "r")
     reader = csv.reader(modelFile, delimiter=' ')
-    
+
     errorRANSAC = []
     errorLinearModel = []
     errorQuadraticModel = []
@@ -41,4 +41,3 @@ if __name__ == '__main__':
     print(np.std(errorLinearModel))
     print(np.std(errorQuadraticModel))
     print(np.std(errorMixedModel))
-

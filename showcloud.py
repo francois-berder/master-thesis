@@ -5,6 +5,7 @@ import vtk
 import csv
 from numpy import random
 
+
 class VtkPointCloud:
 
     def __init__(self, zMin=-100000.0, zMax=100000.0, maxNumPoints=1e6):
@@ -22,7 +23,7 @@ class VtkPointCloud:
     def addPoint(self, point, color):
         if self.vtkPoints.GetNumberOfPoints() < self.maxNumPoints:
             pointId = self.vtkPoints.InsertNextPoint(point[:])
-            #self.vtkDepth.InsertNextValue(point[2])
+            # self.vtkDepth.InsertNextValue(point[2])
             self.vtkCells.InsertNextCell(1)
             self.vtkCells.InsertCellPoint(pointId)
             self.colors.InsertNextTupleValue(color)
@@ -31,20 +32,20 @@ class VtkPointCloud:
             self.vtkPoints.SetPoint(r, point[:])
         self.vtkCells.Modified()
         self.vtkPoints.Modified()
-        #self.vtkDepth.Modified()
+        # self.vtkDepth.Modified()
 
     def clearPoints(self):
         self.vtkPoints = vtk.vtkPoints()
         self.vtkCells = vtk.vtkCellArray()
         self.colors = vtk.vtkUnsignedCharArray()
         self.colors.SetNumberOfComponents(3)
-        #self.vtkDepth = vtk.vtkDoubleArray()
-        #self.vtkDepth.SetName('DepthArray')
+        # self.vtkDepth = vtk.vtkDoubleArray()
+        # self.vtkDepth.SetName('DepthArray')
         self.vtkPolyData.SetPoints(self.vtkPoints)
         self.vtkPolyData.SetVerts(self.vtkCells)
         self.vtkPolyData.GetPointData().SetScalars(self.colors)
-        #self.vtkPolyData.GetPointData().SetScalars(self.vtkDepth)
-        #self.vtkPolyData.GetPointData().SetActiveScalars('DepthArray')
+        # self.vtkPolyData.GetPointData().SetScalars(self.vtkDepth)
+        # self.vtkPolyData.GetPointData().SetActiveScalars('DepthArray')
 
 
 pointCloud = VtkPointCloud()
@@ -56,7 +57,7 @@ for row in reader:
     data.append((float(row[0]), float(row[1]), -float(row[2])))
     colors.append((float(row[3]), float(row[4]), float(row[5])))
 
-for i,_ in enumerate(data):
+for i, _ in enumerate(data):
     pointCloud.addPoint(data[i], colors[i])
 
 # Renderer

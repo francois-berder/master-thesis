@@ -6,11 +6,14 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import math
 
+
 def funcQuadratic(x, a, b, c):
     return a + np.array(x) * b + c * np.square(x)
 
+
 def funcLinear(x, a, b):
-    return a + np.array(x) * b;
+    return a + np.array(x) * b
+
 
 def findModel(name, f, datat, datax, datay):
     poptX, pcovX = curve_fit(f, datat, datax)
@@ -94,4 +97,3 @@ if __name__ == '__main__':
     plt.plot(xs, ys, 'r')
     plt.savefig('model-scale.png')
     plt.savefig('report/images/model-scale.png')
-
