@@ -1,6 +1,5 @@
 #include <fstream>
 #include <sstream>
-#include <opencv2/highgui/highgui.hpp>
 #include "WorkCollector.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
