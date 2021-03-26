@@ -256,7 +256,7 @@ std::tuple<Matrix3d, Vector3d> Worker::applyModel(Matrix3d &initialRotation, Vec
     double angleX, angleY, angleZ;
     std::tie(angleX, angleY, angleZ) = findCardanAngles(initialRotation);
 
-    double x, y;
+    double x = 0., y = 0.;
 
     if(algoParams[0] == "linear")
     {
